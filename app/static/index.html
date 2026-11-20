@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Converter</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f0b241'/%3E%3Cpolygon points='12 9 23 16 12 23' fill='%231a1204'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script>
+(function(){var t=null;try{t=localStorage.getItem('th');}catch(e){}
+if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+document.documentElement.setAttribute('data-theme',t);})();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#15171b;--surface:#1c1f24;--surface2:#242830;--line:#2f343c;--line2:#3a4049;
+  --text:#e9eaed;--dim:#8f96a1;--amber:#f0b241;--amber-ink:#1a1204;--mint:#4fd8a3;--red:#ff7070;--gray-fill:#4a505a;
+  --amber-soft:rgba(240,178,65,.14);--mint-soft:rgba(79,216,163,.14);--red-soft:rgba(255,112,112,.14);
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:8px;--rc:12px;
+}
+[data-theme="light"]{
+  --bg:#f2f1ed;--surface:#ffffff;--surface2:#eceae4;--line:#dcd9d1;--line2:#c9c5bb;
+  --text:#1c1e22;--dim:#646a75;--amber:#985b00;--amber-ink:#fff;--mint:#0c794f;--red:#c62a2f;--gray-fill:#b9b6ae;
+  --amber-soft:rgba(152,91,0,.13);--mint-soft:rgba(12,121,79,.13);--red-soft:rgba(198,42,47,.12);
+}
+html{color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-weight:600;letter-spacing:-.01em;line-height:1.25}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.hidden{display:none!important}
+.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+.dim{color:var(--dim)}
+.mint{color:var(--mint)}.amber{color:var(--amber)}.red{color:var(--red)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;border-radius:var(--r);border:1px solid var(--line2);background:var(--surface2);font-size:13px;font-weight:500;line-height:1.3;white-space:nowrap;transition:background .15s,border-color .15s,color .15s;min-height:36px}
+.btn:hover{border-color:var(--dim)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn .lbl{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.btn-p{background:var(--amber);color:var(--amber-ink);border-color:var(--amber)}
+.btn-p:hover{filter:brightness(1.06);border-color:var(--amber)}
+.btn-d{color:var(--red);border-color:var(--red)}
+.btn-d:hover{background:var(--red-soft)}
+.btn-lg{padding:11px 18px;font-size:14px;min-height:44px}
+.btn-sm{padding:5px 10px;font-size:12px;min-height:30px}
+.btn-ic{width:36px;height:36px;padding:0;justify-content:center;border-radius:var(--r);border:1px solid var(--line);color:var(--dim)}
+.btn-ic:hover{color:var(--text);border-color:var(--line2)}
+.btn-link{color:var(--dim);font-size:12px;padding:4px 6px;border-radius:6px}
+.btn-link:hover{color:var(--text);background:var(--surface2)}
+
+/* ── Forms ── */
+label.lbl{display:block;font-size:12px;font-weight:500;color:var(--dim);margin-bottom:6px}
+.inp{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);font-size:14px;transition:border-color .15s;min-width:0}
+.inp:focus{border-color:var(--amber)}
+.inp:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+.inp.err{border-color:var(--red)}
+.fg{margin-bottom:14px}
+.ferr{color:var(--red);font-size:12px;margin-top:6px;overflow-wrap:anywhere}
+.chk{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);cursor:pointer;user-select:none}
+.chk input{accent-color:var(--amber);width:14px;height:14px;margin:0}
+
+/* ── Login ── */
+#login{display:none;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--surface);border:1px solid var(--line);border-radius:var(--rc);padding:36px 32px;width:100%;max-width:380px}
+.logo{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--amber);color:var(--amber-ink);flex:none}
+.logo .ic{width:16px;height:16px;fill:currentColor;stroke:none}
+.login-box .logo{width:44px;height:44px;border-radius:11px;margin-bottom:18px}
+.login-box .logo .ic{width:20px;height:20px}
+.login-box h1{font-size:20px;margin-bottom:4px}
+.login-box p.sub{color:var(--dim);font-size:13px;margin-bottom:24px}
+.lock{display:none;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--r);background:var(--red-soft);color:var(--red);font-size:13px;margin-bottom:14px;overflow-wrap:anywhere}
+.lock.on{display:flex}
+
+/* ── Header ── */
+#app{display:none}
+/* Streifen vollflaechig, Inhalt buendig zum Hauptbereich – sonst klebt das Logo
+   auf breiten Schirmen am Rand, waehrend der Inhalt weit in der Mitte beginnt. */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(24px,calc((100% - 1900px) / 2 + 24px));border-bottom:1px solid var(--line);background:var(--surface);flex-wrap:wrap}
+.top-l{display:flex;align-items:center;gap:12px;min-width:0}
+.top-l h1{font-size:16px;white-space:nowrap}
+.top-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap;min-width:0;flex:0 1 auto}
+.chip>span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.chip.gpu{border-color:var(--mint);color:var(--mint)}
+.chip.gpu .ic{stroke:var(--mint)}
+.btn .lbl-t{display:inline}
+
+/* ── Reclaim bar ── */
+.reclaim{border-bottom:1px solid var(--line);background:var(--surface)}
+/* Der Streifen läuft über die volle Breite, sein Inhalt endet dort, wo auch der
+   Hauptbereich endet – sonst steht die Auftragsspalte auf breiten Schirmen mitten
+   im Bild, während die Bilanz bis an den Rand reicht. */
+.reclaim-in{display:flex;flex-wrap:wrap;align-items:center;gap:28px;padding:18px 24px;max-width:1900px;margin:0 auto}
+.reclaim-num{flex:none;min-width:150px}
+.reclaim-num b{display:block;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:30px;font-weight:500;line-height:1.1;color:var(--mint);letter-spacing:-.01em}
+.reclaim-num b.loss{color:var(--red)}
+.reclaim-num .eyebrow{margin-top:4px}
+.reclaim-meta{flex:none;font-size:12.5px;color:var(--dim);line-height:1.45;max-width:180px}
+.reclaim-meta .num{color:var(--text)}
+/* Kacheln – gleiche Darstellung wie im Verlauf, damit beide Seiten dasselbe sagen */
+.tiles{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:19px;font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v.mint{color:var(--mint)}
+.tile .v.red{color:var(--red)}
+.tile .sub{font-size:11px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .live{color:var(--amber)}
+.reclaim-empty{flex:1;font-size:13.5px;color:var(--dim)}
+.reclaim-note{flex-basis:100%;min-width:0;font-size:12.5px;color:var(--dim);line-height:1.45;margin-top:-10px}
+
+/* ── Layout ── */
+.main{display:grid;grid-template-columns:1fr;gap:20px;padding:20px 24px;max-width:1900px;margin:0 auto}
+@media (min-width:1000px){.main{grid-template-columns:360px minmax(0,1fr);align-items:start}}
+/* Ab hier ist genug Platz, dass die Auftragsspalte Ordnernamen nicht mehr kürzen muss. */
+@media (min-width:1800px){.main{grid-template-columns:400px minmax(0,1fr)}}
+@media (max-width:999px){body.running .card-run{order:-1}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--rc);min-width:0}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);min-height:54px}
+.card-h h2{font-size:15px}
+.card-b{padding:18px}
+.sec{padding:16px 18px;border-bottom:1px solid var(--line)}
+.sec:last-child{border-bottom:0}
+.step{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.step b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--surface2);border:1px solid var(--line2);font-family:var(--mono);font-size:11.5px;font-weight:500;color:var(--dim)}
+.step h3{font-size:13.5px;font-weight:600}
+.step.plain{padding-left:32px}
+.step .r{margin-left:auto}
+
+/* Status chip */
+.status{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:500;border:1px solid var(--line2);color:var(--dim);white-space:nowrap}
+.status i{width:7px;height:7px;border-radius:50%;background:var(--dim);display:inline-block}
+.status.run{color:var(--amber);border-color:var(--amber)}
+.status.run i{background:var(--amber);animation:blink 1.4s ease-in-out infinite}
+.status.ok{color:var(--mint);border-color:var(--mint)}.status.ok i{background:var(--mint)}
+.status.bad{color:var(--red);border-color:var(--red)}.status.bad i{background:var(--red)}
+@keyframes blink{50%{opacity:.35}}
+
+/* ── Folder browser ── */
+.bc{display:flex;align-items:center;flex-wrap:wrap;gap:2px;font-size:12.5px;margin-bottom:8px;min-width:0}
+.bc button{padding:3px 6px;border-radius:5px;color:var(--dim);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.bc button:hover{color:var(--text);background:var(--surface2)}
+.bc button.cur{color:var(--text);font-weight:500}
+.bc .ic{width:14px;height:14px}
+.bc .sep{color:var(--line2);width:12px;height:12px}
+.flist{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);max-height:220px;overflow-y:auto;padding:4px}
+.fi{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border-radius:6px;font-size:13px;text-align:left;min-width:0}
+.fi:hover{background:var(--surface)}
+.fi span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fi .ic{color:var(--dim);width:15px;height:15px}
+.fi.sys{color:var(--dim)}
+.fi .go{margin-left:auto;color:var(--line2)}
+.fempty{padding:14px;font-size:12.5px;color:var(--dim);text-align:center}
+.ffoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.ffoot .info{font-size:12px;color:var(--dim);min-width:0}
+.ffoot .btn{max-width:100%}
+/* ── Auswahlliste (Sammelauftrag) ── */
+/* Bewusst NICHT wie die Browserliste darüber: kein Panel, sondern Trennlinien auf
+   Kartengrund mit amberner Kante – „was ich gewählt habe“ statt „wo ich gerade bin“. */
+.picks{margin-top:12px;min-width:0}
+.pick-empty{display:flex;gap:8px;align-items:flex-start;padding:11px 12px;border:1px dashed var(--line2);border-radius:var(--r);font-size:12.5px;color:var(--dim);line-height:1.45}
+.pick-empty .ic{color:var(--line2);margin-top:1px}
+.pick-empty small{display:inline-block;margin-top:3px;font-size:11.5px;opacity:.85}
+.pick-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:14px 0 4px;min-width:0}
+.pick-list{max-height:40vh;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--line)}
+.pick-list:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.pick{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:0 8px;align-items:center;padding:6px 2px 6px 9px;border-left:2px solid var(--amber);border-bottom:1px solid var(--line);min-width:0}
+.pick:last-child{border-bottom:0}
+.pick-body{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 12px;min-width:0}
+.pick.leer{border-left-color:var(--line2)}
+.pick.leer .p b{color:var(--dim)}
+.pick.neu{background:var(--amber-soft)}
+/* Pfad: das Volume steht IMMER, gekürzt wird die Mitte, der letzte Ordner nur zuletzt */
+.pathx{display:flex;align-items:baseline;min-width:0;overflow:hidden}
+.pathx .vol{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pathx .mid{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+.pathx .sep{flex:none}
+.pathx b{flex:none;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.pick .p{flex:1 1 190px;font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--dim)}
+.pick .p b{color:var(--text)}
+.pick .num{flex:none;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--dim);white-space:nowrap}
+.pick .btn-ic{width:28px;height:28px;border-color:transparent;color:var(--dim)}
+.pick .btn-ic:hover{color:var(--red);border-color:var(--red)}
+.pick-foot{display:flex;flex-wrap:wrap;gap:0 4px;margin-top:9px;font-size:12px;color:var(--dim);min-width:0}
+.pick-foot .num{color:var(--text);font-variant-numeric:tabular-nums}
+.pick-err{margin-top:9px;display:flex;flex-direction:column;gap:6px}
+.pick-err .pe{display:flex;gap:7px;align-items:flex-start;font-size:12px;color:var(--red);line-height:1.4;overflow-wrap:anywhere;min-width:0}
+.pick-err .pe .ic{flex:none;margin-top:1px}
+
+/* ── Segments ── */
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:0;padding:3px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r)}
+.seg label{position:relative;display:block;text-align:center;font-size:12.5px;font-weight:500;color:var(--dim);padding:6px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;user-select:none}
+.seg input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.seg label:has(input:checked){background:var(--surface);color:var(--text);box-shadow:0 0 0 1px var(--line2)}
+.seg label:has(input:focus-visible){outline:2px solid var(--amber);outline-offset:1px}
+.seg-hint{font-size:12px;color:var(--dim);margin-top:8px;min-height:18px}
+.cont{margin-top:12px}
+.cont-lbl{display:block;font-size:12px;font-weight:500;color:var(--dim);margin-bottom:6px}
+
+/* ── Format cards ── */
+.fmt{display:grid;gap:8px;margin-top:10px}
+.fcard{position:relative;display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2);cursor:pointer;transition:border-color .15s}
+.fcard:hover{border-color:var(--line2)}
+.fcard input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.fcard:has(input:checked){border-color:var(--amber);background:var(--amber-soft)}
+.fcard:has(input:focus-visible){outline:2px solid var(--amber);outline-offset:2px}
+.fcard .t{display:flex;align-items:baseline;gap:7px;min-width:0}
+.fcard .t b{font-family:var(--mono);font-weight:500;font-size:14px}
+.fcard .t small{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.fcard .badge{grid-column:2;grid-row:1;align-self:start;display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;padding:2px 7px;border-radius:999px;border:1px solid var(--line2);color:var(--dim);white-space:nowrap}
+.fcard .badge.gpu{border-color:var(--mint);color:var(--mint)}
+.fcard .badge .ic{width:11px;height:11px}
+.fcard .sv{grid-column:1/-1;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;color:var(--mint)}
+.fcard .hint{grid-column:1/-1;font-size:12px;color:var(--dim);line-height:1.4}
+.fcard:has(input:checked) .badge.gpu{background:var(--surface)}
+
+/* ── Prescan result ── */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.tile{padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2);min-width:0}
+.tile b{display:block;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:18px;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile small{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.tiles-sm .tile{padding:8px 10px}.tiles-sm .tile b{font-size:15px}
+details.dl{border:1px solid var(--line);border-radius:var(--r);margin-top:8px;overflow:hidden}
+details.dl summary{list-style:none;display:flex;align-items:center;gap:8px;padding:8px 11px;font-size:12.5px;font-weight:500;cursor:pointer;user-select:none;background:var(--surface2)}
+details.dl summary::-webkit-details-marker{display:none}
+details.dl summary .ic{width:14px;height:14px;color:var(--dim);transition:transform .15s;margin-left:auto}
+details.dl[open] summary .ic.chev{transform:rotate(180deg)}
+details.dl summary .cnt{font-family:var(--mono);color:var(--dim);font-weight:400}
+.dl-list{max-height:200px;overflow-y:auto}
+.dl-row{display:flex;align-items:center;gap:8px;padding:6px 11px;border-top:1px solid var(--line);font-size:12.5px;min-width:0}
+.dl-row .nm{flex:1;min-width:0}
+.dl-row .nm b{display:block;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dl-row .nm small{display:none;font-family:var(--mono);font-size:10.5px;color:var(--dim);line-height:1.45}
+.dl-row .nm small.on{display:flex}
+.dl-row .cd{font-family:var(--mono);font-size:11px;color:var(--dim);text-transform:uppercase}
+.dl-row .sz{font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap}
+.dl-foot{padding:8px 11px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--dim)}
+.warn{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--dim);margin-top:10px;line-height:1.45}
+.warn .ic{color:var(--amber);margin-top:1px}
+.collapsed-h{display:none;padding:14px 18px;gap:12px;flex-direction:column;align-items:stretch}
+.collapsed-h .btn{width:100%}
+.collapsed-h .sum{min-width:0;flex:1}
+.collapsed-h .sum b{display:block;font-weight:500;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.collapsed-h .sum span{font-size:12px;color:var(--dim)}
+body.running .card-job:not(.expanded) .card-h{display:none}
+body.running .card-job:not(.expanded) .job-body{display:none}
+body.running .card-job:not(.expanded) .collapsed-h{display:flex}
+
+/* ── Run summary ── */
+.run-sum{padding:16px 18px;border-bottom:1px solid var(--line)}
+.run-title{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--dim);min-width:0}
+.run-title b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.bar{height:10px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--amber);border-radius:999px;transition:width .5s ease;width:0}
+.bar.live>i{background-image:repeating-linear-gradient(-45deg,rgba(0,0,0,.14) 0 6px,transparent 6px 12px);background-size:17px 17px;animation:stripes 1s linear infinite}
+.bar.ok>i{background:var(--mint)}
+.bar.bad>i{background:var(--red)}
+@keyframes stripes{to{background-position:17px 0}}
+.run-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--dim)}
+.run-meta b{color:var(--text);font-weight:500}
+.run-tiles{margin-top:14px}
+.run-empty{padding:40px 18px;text-align:center;color:var(--dim);font-size:13.5px}
+.run-empty .ic{width:28px;height:28px;stroke-width:1.25;margin-bottom:10px;color:var(--line2)}
+
+/* ── File list ── */
+.sec-h{display:flex;align-items:center;gap:8px;padding:11px 18px;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:500}
+.sec-h .cnt{font-family:var(--mono);color:var(--dim);font-weight:400}
+.sec-h button.tog{margin-left:auto}
+.list{max-height:60vh;overflow-y:auto;overscroll-behavior:contain}
+.row{display:grid;grid-template-columns:28px minmax(0,1fr) 196px;gap:4px 12px;align-items:center;padding:9px 18px;border-bottom:1px solid var(--line);min-width:0;transition:background .3s}
+.row:last-child{border-bottom:0}
+.row.converting{background:var(--surface2)}
+.row .n{font-family:var(--mono);font-size:11.5px;color:var(--dim);text-align:right}
+.row .nm{min-width:0}
+.row .nm b{display:block;font-weight:400;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm small{display:none;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.row .nm small.on{display:flex}
+.st{min-width:0;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11.5px;color:var(--dim);display:flex;flex-direction:column;gap:4px}
+.st .sb{display:none;height:6px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.st .sb i{display:block;height:100%;width:0;background:var(--amber);border-radius:999px;transition:width .5s ease}
+.st .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.converting .st .sb{display:block}
+.row.done .st .sb{display:block;background:transparent;border-color:var(--gray-fill)}
+.row.done .st .sb i{background:var(--mint)}
+.row.done.grew .st .sb i{background:var(--red)}
+.row.done .st .tx{color:var(--text)}
+.row.error .st .tx{color:var(--red);font-weight:500}
+.row .er{display:none;grid-column:2/-1;font-size:12px;color:var(--red);overflow-wrap:anywhere;line-height:1.4}
+.row.error .er{display:block}
+.row.skipped .st .tx,.row.cancelled .st .tx{color:var(--dim)}
+.q-row{display:flex;align-items:center;gap:12px;padding:9px 18px;border-bottom:1px solid var(--line);font-size:13px;min-width:0}
+.q-row:last-child{border-bottom:0}
+.q-row .n{font-family:var(--mono);font-size:11.5px;color:var(--dim);width:28px;text-align:right;flex:none}
+.q-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-row .t span{color:var(--dim)}
+.q-row .num{color:var(--dim);font-size:12px;white-space:nowrap}
+.q-row .btn-ic{width:28px;height:28px}
+.q-row .btn-ic:hover{color:var(--red);border-color:var(--red)}
+
+/* ── Mini bar ── */
+.mini{position:fixed;top:0;left:0;right:0;height:40px;z-index:40;background:var(--surface);border-bottom:1px solid var(--line);display:none;align-items:center;gap:14px;padding:0 24px;transform:translateY(-100%);transition:transform .2s ease}
+.mini.on{display:flex}
+.mini.show{transform:translateY(0)}
+.mini .bar{flex:1;height:8px}
+.mini .num{font-size:12.5px;color:var(--dim);white-space:nowrap}
+.mini .num b{color:var(--text);font-weight:500}
+.mini .btn-sm{flex:none}
+
+/* ── Overlay / modal ── */
+.ov{position:fixed;inset:0;background:rgba(10,11,14,.66);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(3px)}
+.ov.on{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line2);border-radius:var(--rc);padding:24px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.modal h2{font-size:16px;margin-bottom:4px}
+.modal p.sub{font-size:13px;color:var(--dim);margin-bottom:18px}
+.scan-num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:34px;font-weight:500;line-height:1;margin:8px 0 6px}
+.scan-num small{font-size:14px;color:var(--dim);font-weight:400}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);font-size:13px}
+.sw small{display:block;color:var(--dim);font-size:12px}
+.toggle{position:relative;width:38px;height:22px;flex:none;border-radius:999px;background:var(--line2);border:0;transition:background .15s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.toggle[aria-checked="true"]{background:var(--amber)}
+.toggle[aria-checked="true"]::after{transform:translateX(16px)}
+
+/* ── Toast ── */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--surface);border:1px solid var(--line2);border-left:3px solid var(--mint);color:var(--text);padding:11px 16px;border-radius:var(--r);font-size:13px;z-index:200;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.toast.err{border-left-color:var(--red)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ── Responsive ── */
+@media (max-width:640px){
+  .top{padding:10px 14px}
+  .main{padding:14px}
+  .top-l{width:100%;justify-content:space-between}
+  .top-r{width:100%;justify-content:flex-end}
+  .btn .lbl-t{display:none}
+  .btn.txt{width:36px;padding:0;color:var(--dim);border-color:var(--line)}
+  .reclaim-in{gap:14px 20px;padding:14px}
+  .reclaim-num{min-width:0}.reclaim-num b{font-size:26px}
+  .reclaim-meta{max-width:none;flex:1}
+  .tiles{flex-basis:100%;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+  .tile{padding:9px 10px}.tile .v{font-size:17px}
+  /* Schmal ist kein Platz für eine Zeile: "182,9 GB → 52,5 GB" darf umbrechen,
+     statt als "182,9 GB → 52,5 …" abgeschnitten zu werden. */
+  .tile .sub{white-space:normal;font-size:10.5px;line-height:1.35}
+  .main{padding:14px;gap:14px}
+  .card-h,.sec,.run-sum,.sec-h,.row,.q-row{padding-left:14px;padding-right:14px}
+  .row{grid-template-columns:24px minmax(0,1fr);gap:4px 10px}
+  .row .st{grid-column:2}
+  .row .er{grid-column:2}
+  .btn-lg{width:100%}
+  .mini{padding:0 14px}
+  .ffoot .btn{width:100%}
+  .top-l h1{flex:none}
+  .run-meta{font-size:12px;gap:4px 10px}
+  .q-row{display:grid;grid-template-columns:24px minmax(0,1fr) 28px;gap:2px 10px;align-items:center}
+  .q-row .n{width:auto}
+  .q-row .num{grid-column:2;grid-row:2}
+  .q-row .btn-ic{grid-column:3;grid-row:1/3}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H6.5a2 2 0 0 0-1.9 1.4L3 17z"/><path d="M3 17l1.6-5.6A2 2 0 0 1 6.5 10H22l-2 8H5a2 2 0 0 1-2-1z"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5v.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h5M15 8l4 4-4 4M19 12H9"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+</svg>
+
+<!-- ── Login ── -->
+<div id="login">
+  <form class="login-box" id="loginForm" novalidate>
+    <span class="logo"><svg class="ic"><use href="#i-play"/></svg></span>
+    <h1>Media Converter</h1>
+    <p class="sub">Melde dich an, um Konvertierungen zu starten.</p>
+    <div class="lock" id="lock" role="alert"><svg class="ic"><use href="#i-alert"/></svg><span id="lockTxt"></span></div>
+    <div class="fg"><label class="lbl" for="lu">Benutzername</label><input class="inp" id="lu" autocomplete="username" autocapitalize="off" spellcheck="false"></div>
+    <div class="fg"><label class="lbl" for="lp">Passwort</label><input class="inp" id="lp" type="password" autocomplete="current-password"><div class="ferr hidden" id="lerr"></div></div>
+    <button class="btn btn-p btn-lg" type="submit" id="loginBtn" style="width:100%">Anmelden</button>
+  </form>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <header class="top">
+    <div class="top-l">
+      <span class="logo"><svg class="ic"><use href="#i-play"/></svg></span>
+      <h1>Media Converter</h1>
+      <span class="chip" id="gpuChip" title=""><svg class="ic"><use href="#i-cpu"/></svg><span>…</span></span>
+    </div>
+    <div class="top-r">
+      <a class="btn txt" href="/history" title="Verlauf: konvertierte Dateien" aria-label="Verlauf"><svg class="ic"><use href="#i-history"/></svg><span class="lbl-t">Verlauf</span></a>
+      <button class="btn btn-ic" id="thBtn" onclick="toggleTheme()" title="Helles/dunkles Design" aria-label="Design umschalten"><svg class="ic"><use href="#i-moon"/></svg></button>
+      <button class="btn btn-ic" onclick="openSettings()" title="Einstellungen" aria-label="Einstellungen"><svg class="ic"><use href="#i-gear"/></svg></button>
+      <button class="btn txt" onclick="doLogout()" title="Abmelden" aria-label="Abmelden"><svg class="ic"><use href="#i-logout"/></svg><span class="lbl-t">Abmelden</span></button>
+    </div>
+  </header>
+
+  <!-- Rückgewinn-Leiste -->
+  <section class="reclaim" id="reclaim" aria-label="Zurückgewonnener Speicherplatz">
+   <div class="reclaim-in">
+    <div class="reclaim-num"><b id="rcNum">–</b><div class="eyebrow" id="rcWord">zurückgewonnen</div></div>
+    <div class="reclaim-meta" id="rcMeta"></div>
+    <div class="tiles" id="rcTiles">
+      <div class="tile"><div class="eyebrow">Dateien</div><div class="v" id="tFiles">0</div><div class="sub" id="tFilesSub">–</div></div>
+      <div class="tile"><div class="eyebrow" id="tSavedLbl">Gespart</div><div class="v mint" id="tSaved">0 B</div><div class="sub" id="tSavedSub">–</div></div>
+      <div class="tile"><div class="eyebrow" id="tPctLbl">Reduktion</div><div class="v" id="tPct">0 %</div><div class="sub" id="tPctSub">–</div></div>
+    </div>
+    <div class="reclaim-note hidden" id="rcNote"></div>
+    <div class="reclaim-empty hidden" id="rcEmpty">Noch nichts konvertiert – wähle unten einen Ordner.</div>
+   </div>
+  </section>
+
+  <main class="main">
+    <!-- ── AUFTRAG ── -->
+    <section class="card card-job" id="jobCard" aria-label="Auftrag">
+      <div class="collapsed-h">
+        <div class="sum"><div class="eyebrow">Läuft gerade</div><b id="colSum">–</b><span>Neue Aufträge werden in die Warteschlange gestellt.</span></div>
+        <button class="btn" onclick="expandJob()"><svg class="ic"><use href="#i-play"/></svg>Neuen Auftrag anlegen</button>
+      </div>
+      <div class="card-h"><h2>Auftrag</h2><button class="btn-link hidden" id="colBtn" onclick="collapseJob()">Einklappen</button></div>
+      <div class="job-body">
+        <!-- 1 Ordner -->
+        <div class="sec">
+          <div class="step"><b>1</b><h3 id="pickH">Ordner</h3>
+            <label class="chk r hidden" id="sysWrap"><input type="checkbox" id="sysChk" onchange="toggleSys()">Systemordner anzeigen</label>
+          </div>
+          <nav class="bc" id="bc" aria-label="Pfad"></nav>
+          <div class="flist" id="flist"></div>
+          <div class="ffoot">
+            <div class="info num" id="fInfo"></div>
+            <button class="btn" id="useBtn" onclick="addFolder()" disabled><svg class="ic"><use href="#i-plus"/></svg>Ordner hinzufügen</button>
+          </div>
+          <div class="picks" id="picks">
+            <div class="pick-empty" id="pickEmpty"><svg class="ic"><use href="#i-folder"/></svg><span>Noch kein Ordner gewählt – navigiere zu einem Ordner und füge ihn hinzu.<br><small>Mehrere Ordner ergeben einen Auftrag, auch über Volumes hinweg.</small></span></div>
+            <div class="pick-box hidden" id="pickBox">
+              <div class="pick-h"><span class="eyebrow" id="pickSelH">Ausgewählt</span></div>
+              <div class="pick-list" id="pickList" role="list" tabindex="0" aria-labelledby="pickSelH"></div>
+              <div class="pick-foot hidden" id="pickFoot"></div>
+            </div>
+            <div class="pick-err hidden" id="pickErr"></div>
+          </div>
+        </div>
+        <!-- 2 Format -->
+        <div class="sec">
+          <div class="step"><b>2</b><h3>Format</h3></div>
+          <div class="seg" role="radiogroup" aria-label="Dateityp">
+            <label><input type="radio" name="ftype" value="video" checked onchange="setType('video')">Video</label>
+            <label><input type="radio" name="ftype" value="audio" onchange="setType('audio')">Audio</label>
+            <label title="Repariert Filme für Fernseher-Apps (z. B. Samsung ohne DTS) – das Bild wird nicht neu berechnet"><input type="radio" name="ftype" value="tvfix" onchange="setType('tvfix')">TV-Reparatur</label>
+          </div>
+          <div class="fmt" id="fmt" role="radiogroup" aria-label="Zielformat"></div>
+          <div class="cont hidden" id="contRow">
+            <span class="cont-lbl">Container</span>
+            <div class="seg" id="cseg" role="radiogroup" aria-label="Container"></div>
+            <div class="seg-hint" id="chint"></div>
+          </div>
+        </div>
+        <!-- 3 Qualität -->
+        <div class="sec" id="qualSec">
+          <div class="step"><b>3</b><h3>Qualität</h3></div>
+          <div class="seg" id="qseg" role="radiogroup" aria-label="Qualität"></div>
+          <div class="seg-hint" id="qhint"></div>
+        </div>
+        <!-- Analyse-Ergebnis -->
+        <div class="sec hidden" id="psSec">
+          <div class="step plain"><h3>Analyse</h3><button class="btn-link r" onclick="resetPrescan()">Verwerfen</button></div>
+          <div class="tiles tiles-sm" id="psTiles"></div>
+          <details class="dl hidden" id="psConv"><summary><svg class="ic"><use href="#i-film"/></svg>Wird konvertiert <span class="cnt" id="psConvN"></span><svg class="ic chev"><use href="#i-chevron-down"/></svg></summary><div class="dl-list" id="psConvL"></div></details>
+          <details class="dl hidden" id="psSkip"><summary><svg class="ic"><use href="#i-check"/></svg><span id="psSkipH">Bereits im Zielformat</span> <span class="cnt" id="psSkipN"></span><svg class="ic chev"><use href="#i-chevron-down"/></svg></summary><div class="dl-list" id="psSkipL"></div></details>
+          <details class="dl hidden" id="psCorr"><summary><svg class="ic red"><use href="#i-alert"/></svg><span class="red">Defekt</span> <span class="cnt" id="psCorrN"></span><svg class="ic chev"><use href="#i-chevron-down"/></svg></summary>
+            <div class="dl-list" id="psCorrL"></div>
+            <div class="dl-foot"><span>Beschädigt (Nullbytes) – können nicht konvertiert werden.</span><button class="btn btn-sm btn-d" onclick="deleteAllCorrupt()"><svg class="ic"><use href="#i-trash"/></svg>Alle löschen</button></div>
+          </details>
+        </div>
+        <!-- Start -->
+        <div class="sec">
+          <button class="btn btn-p btn-lg" id="goBtn" onclick="startFlow()" disabled style="width:100%"><svg class="ic"><use href="#i-play"/></svg><span id="goTxt">Ordner analysieren</span></button>
+          <div class="warn"><svg class="ic"><use href="#i-alert"/></svg><span id="warnTxt">Originale werden nach erfolgreicher Prüfung ersetzt. Ton- und Untertitelspuren bleiben erhalten.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LAUF ── -->
+    <section class="card card-run" id="runCard" aria-label="Lauf">
+      <div class="card-h">
+        <h2 style="display:flex;align-items:center;gap:10px">Lauf <span class="status" id="runChip"><i></i><span>Kein Auftrag</span></span></h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn btn-sm hidden" id="hideBtn" onclick="doClear()">Ausblenden</button>
+          <button class="btn btn-sm btn-d hidden" id="cancelBtn" onclick="doCancel()"><svg class="ic"><use href="#i-stop"/></svg>Abbrechen</button>
+        </div>
+      </div>
+      <div class="run-empty" id="runEmpty"><svg class="ic"><use href="#i-film"/></svg><div>Kein Auftrag aktiv.<br>Wähle einen Ordner und ein Format, um zu starten.</div></div>
+      <div class="run-sum hidden" id="runSum">
+        <div class="run-title"><b id="rtFolder">–</b><span>→</span><span class="num" id="rtTarget">–</span><span class="num" id="rtQual"></span></div>
+        <div class="bar" id="tBar"><i></i></div>
+        <div class="run-meta" id="tMeta"></div>
+        <div class="tiles run-tiles" id="runTiles">
+          <div class="tile"><b id="pgBefore">–</b><small>Vorher</small></div>
+          <div class="tile"><b id="pgAfter">–</b><small>Nachher</small></div>
+          <div class="tile"><b class="mint" id="pgSaved">–</b><small id="pgSavedLbl">Gespart</small></div>
+          <div class="tile"><b id="pgPct">–</b><small id="pgPctLbl">Reduktion</small></div>
+        </div>
+      </div>
+      <div id="fileSec" class="hidden">
+        <div class="sec-h">Dateien <span class="cnt" id="fileCnt"></span></div>
+        <div class="list" id="fileList"></div>
+      </div>
+      <div id="queueSec" class="hidden">
+        <div class="sec-h" style="border-top:1px solid var(--line)">Warteschlange <span class="cnt" id="queueCnt"></span></div>
+        <div id="queueList"></div>
+      </div>
+      <div id="skipSec" class="hidden">
+        <div class="sec-h" style="border-top:1px solid var(--line)">Übersprungen – bereits im Zielformat <span class="cnt" id="skipCnt"></span><button class="btn-link tog" id="skipTog" onclick="toggleSkip()">Anzeigen</button></div>
+        <div class="list hidden" id="skipList"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Sticky mini bar -->
+<div class="mini" id="mini" aria-hidden="true">
+  <div class="bar live"><i id="miniFill"></i></div>
+  <span class="num" id="miniTxt"></span>
+</div>
+
+<!-- Prescan overlay -->
+<div class="ov" id="scanOv" role="dialog" aria-modal="true" aria-labelledby="scanH">
+  <div class="modal">
+    <div class="eyebrow">Analyse</div>
+    <h2 id="scanH">Ordner wird analysiert</h2>
+    <div class="scan-num"><span id="scanDone">0</span> <small>von <span id="scanTotal">…</span> Dateien</small></div>
+    <div class="bar live" id="scanBar"><i></i></div>
+    <p class="sub" style="margin:12px 0 0" id="scanMsg">Codec und Spuren jeder Datei werden geprüft.</p>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="ov" id="setOv" role="dialog" aria-modal="true" aria-labelledby="setH">
+  <div class="modal">
+    <h2 id="setH">Einstellungen</h2>
+    <p class="sub">Zugangsdaten und Benachrichtigungen.</p>
+    <div class="fg"><label class="lbl">Aktueller Benutzer</label><input class="inp" id="sUser" disabled></div>
+    <div class="fg"><label class="lbl" for="sNewUser">Neuer Benutzername <span class="dim">(leer = unverändert)</span></label><input class="inp" id="sNewUser" autocomplete="off"></div>
+    <div class="fg"><label class="lbl" for="sCurPw">Aktuelles Passwort</label><input class="inp" id="sCurPw" type="password" autocomplete="current-password"></div>
+    <div class="fg"><label class="lbl" for="sNewPw">Neues Passwort <span class="dim">(leer = unverändert)</span></label><input class="inp" id="sNewPw" type="password" autocomplete="new-password"><div class="ferr hidden" id="sErr"></div><div class="ferr mint hidden" id="sOk" style="color:var(--mint)">Gespeichert.</div></div>
+    <div class="sw"><div>Browser-Benachrichtigung bei Fertigstellung<small id="notifySub">Fragt beim Einschalten nach Berechtigung.</small></div><button class="toggle" id="notifyTog" role="switch" aria-checked="false" onclick="toggleNotify()" aria-label="Benachrichtigung"></button></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-p" onclick="saveCredentials()" style="flex:1">Speichern</button>
+      <button class="btn" onclick="closeSettings()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const ESCMAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>ESCMAP[c]);  // Schutznetz, falls doch einmal Markup gebaut wird
+// Alle API-Werte gehen als DOM-Property/Textknoten in die Seite – nie als Attribut-String.
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+function ico(id,cls){const s=document.createElementNS(SVGNS,'svg');s.setAttribute('class','ic'+(cls?' '+cls:''));const u=document.createElementNS(SVGNS,'use');u.setAttribute('href','#i-'+id);s.appendChild(u);return s;}
+function txt(t){return document.createTextNode(t==null?'':String(t));}
+function clear(n){while(n.firstChild)n.removeChild(n.firstChild);return n;}
+const NBSP=' ';
+// ── State ─────────────────────────────────────────────
+let codecs={video:{},audio:{},tvfix:{}},gpu=false,qualities=[],containerDefs={};
+let ftype='video',codec='',quality='balanced',container='';
+let curPath='',folders=[],sysFolders=[],mediaCount=0,mediaBytes=0,showSys=false;
+let picks=[];               // Sammelauftrag: [{path,total,bytes,video,audio}] – ein Ordner ist der Sonderfall mit einem Eintrag
+let pickErrs=[];            // "fehler" aus /api/scan (Ordner, die der Server nicht annehmen konnte)
+const MAX_ORDNER=50;
+let prescan=null;           // result object
+let statusData=null,lastTask=null,prevTaskId=null,prevRunning=false,userExpanded=false;
+let es=null,pollTimer=null,pollMs=0,esFails=0,esWatch=null,esGotData=false;
+let stats=null,stateLoaded=false;
+const cache={blocks:''};
+
+// ── Theme ─────────────────────────────────────────────
+function applyThemeIcon(){const d=document.documentElement.getAttribute('data-theme')==='dark';clear($('thBtn')).appendChild(ico(d?'sun':'moon'));}
+function toggleTheme(){const d=document.documentElement,dark=d.getAttribute('data-theme')==='dark';d.setAttribute('data-theme',dark?'light':'dark');try{localStorage.setItem('th',dark?'light':'dark');}catch(e){}applyThemeIcon();}
+
+// ── Helpers ───────────────────────────────────────────
+function fmtBytes(n,dec){
+  if(n==null||isNaN(n))return'–';
+  const neg=n<0;n=Math.abs(n);const u=['B','KB','MB','GB','TB'];let i=0;
+  while(n>=1024&&i<u.length-1){n/=1024;i++;}
+  const d=dec!=null?dec:(i>0?1:0);
+  return(neg?'−':'')+n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d})+NBSP+u[i];
+}
+function fmtPct(p){return(p<0?'+':'−')+Math.abs(Math.round(p))+NBSP+'%';}
+function fmtEta(s){if(!s||s<=0)return'–';const h=Math.floor(s/3600),m=Math.round(s%3600/60);if(h)return h+NBSP+'h '+m+NBSP+'min';if(m>=1)return m+NBSP+'min';return Math.round(s)+NBSP+'s';}
+function fmtClock(s){if(!s||s<=0)return'–';s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return(h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0');}
+function fmtX(v){return v?v.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'×':'';}
+function fmtDate(t){return new Date(t*1000).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function plural(n,s,p){return n+' '+(n===1?s:p);}
+function shortPath(f){const p=String(f).split('/').filter(Boolean);return p.slice(-2).join('/');}
+// Anzeigenamen des Sammelauftrags ("volume1/…/S01 + 2 weitere") nicht am Schrägstrich zerschneiden
+function shortFolder(f){if(!f)return'/media';const m=/^(.*)( \+ \d+ weitere)$/.exec(String(f));return m?shortPath(m[1])+m[2]:shortPath(f);}
+function kurzText(t,n){t=String(t==null?'':t);return t.length>n?t.slice(0,n-1)+'…':t;}
+function isUnder(a,b){return a===b||String(a).indexOf(String(b)+'/')===0;}
+// Zweite Zeile einer Dateizeile: Quellordner (src, relativ zur Medienwurzel) + Unterordner darin
+// Pfad in "kürzbarer Anfang" + "immer sichtbarer letzter Ordner" zerlegen (DOM, kein Markup-String)
+// Volume (nicht schrumpfbar) · Mitte (kürzbar) · Trenner · letzter Ordner – so bleiben
+// volume1/… und volume2/… auch bei sehr langen Ordnernamen unterscheidbar.
+function fillPath(node,path){clear(node);if(!path)return node;
+  const p=String(path).split('/').filter(Boolean);if(!p.length)return node;
+  const last=p.pop();
+  if(p.length){node.appendChild(el('span','vol',p[0]+'/'));
+    if(p.length>1){node.appendChild(el('span','mid',p.slice(1).join('/')));node.appendChild(el('span','sep','/'));}}
+  node.appendChild(el('b',null,last));return node;}
+function srcLine(f){const src=f&&f.src?String(f.src):'',rd=f&&f.rel_dir?String(f.rel_dir):'';return src?(rd?src+'/'+rd:src):rd;}
+function jobFolders(t){return t?((t.folders&&t.folders.length)?t.folders:(t.folder?[t.folder]:[])):[];}
+function qualLabel(k){const q=qualities.find(x=>x.key===k);return q?q.label:(k||'');}
+function contLabel(c){if(!c)return'';const d=containerDefs[c];return d?(d.label||c.toUpperCase()):c.toUpperCase();}
+function targetName(t){const base=splitLabel(t.target_label||t.target||'')[0];const c=contLabel(t.container);return c?base+' · '+c:base;}
+function splitLabel(l){const m=/^(.*?)\s*\((.*)\)\s*$/.exec(l||'');return m?[m[1],m[2]]:[l||'',''];}
+let toastT=null;
+function toast(m,err,ms){const t=$('toast');t.textContent=m;t.classList.toggle('err',!!err);t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),ms||(err?5000:3500));}
+async function api(p,o={}){
+  const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json'},...o});
+  let d={};try{d=await r.json();}catch(e){}
+  if(r.status===401&&!p.startsWith('/login')){showLogin();throw new Error('Sitzung abgelaufen – bitte neu anmelden.');}
+  if(!r.ok){const e=new Error(d.error||('Fehler '+r.status));e.status=r.status;e.retry=d.retry_after;throw e;}
+  return d;
+}
+
+// ── Auth ──────────────────────────────────────────────
+let lockTimer=null;
+function showLogin(){stopLive();$('app').style.display='none';$('login').style.display='flex';setTimeout(()=>$('lu').focus(),50);}
+function showApp(){$('login').style.display='none';$('app').style.display='block';applyThemeIcon();initApp();}
+async function checkAuth(){try{const d=await api('/auth-check');if(d.authenticated)return showApp();}catch(e){}showLogin();}
+$('loginForm').addEventListener('submit',e=>{e.preventDefault();doLogin();});
+async function doLogin(){
+  const u=$('lu').value.trim(),p=$('lp').value,b=$('loginBtn');
+  $('lerr').classList.add('hidden');$('lu').classList.remove('err');$('lp').classList.remove('err');
+  if(!u){$('lu').classList.add('err');$('lu').focus();return;}
+  if(!p){$('lp').classList.add('err');$('lerr').textContent='Bitte Passwort eingeben.';$('lerr').classList.remove('hidden');return;}
+  b.disabled=true;
+  try{await api('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});b.disabled=false;$('lock').classList.remove('on');showApp();}
+  catch(e){
+    if(e.status===429){startLock(e.retry||60);}
+    else{b.disabled=false;$('lp').classList.add('err');$('lerr').textContent='Benutzername oder Passwort stimmt nicht.';$('lerr').classList.remove('hidden');$('lp').select();}
+  }
+}
+function startLock(sec){
+  clearInterval(lockTimer);let left=Math.max(1,Math.round(sec));const b=$('loginBtn');
+  const tick=()=>{$('lockTxt').textContent=`Zu viele Versuche – warte ${left}${NBSP}s`;b.disabled=true;$('lock').classList.add('on');
+    if(left<=0){clearInterval(lockTimer);$('lock').classList.remove('on');b.disabled=false;}left--;};
+  tick();lockTimer=setInterval(tick,1000);
+}
+async function doLogout(){try{await api('/logout',{method:'POST'});}catch(e){}location.reload();}
+
+// ── Init ──────────────────────────────────────────────
+async function initApp(){
+  try{
+    const c=await api('/codecs');
+    codecs={video:c.video||{},audio:c.audio||{},tvfix:c.tvfix||{}};gpu=!!c.gpu;qualities=c.qualities||[];containerDefs=c.containers||{};
+    const caps=Object.entries(codecs.video).filter(([k,v])=>v.gpu).map(([k,v])=>splitLabel(v.label)[0]);
+    const chip=$('gpuChip');
+    chip.className='chip'+(gpu?' gpu':'');
+    clear(chip);chip.appendChild(ico(gpu?'zap':'cpu'));chip.appendChild(el('span',null,gpu?'GPU '+caps.join(' · '):'CPU – keine Beschleunigung'));
+    chip.title=gpu?'Hardware-Beschleunigung (VAAPI) für: '+caps.join(', '):'Keine VAAPI-Grafikkarte erkannt – alles läuft auf dem Prozessor.';
+    renderQualities();renderFormats();
+  }catch(e){toast(e.message,true);}
+  browseFolder('');
+  loadStats();
+  startLive();
+  updateNotifyUI();
+}
+
+// ── Reclaim bar ───────────────────────────────────────
+async function loadStats(){try{stats=await api('/stats');}catch(e){stats=null;}renderReclaim();}
+/* Gesamtbilanz aus /api/stats plus dem laufenden Auftrag. Eine Quelle für
+   Kopfzahl und Kacheln, damit beide nie auseinanderlaufen. */
+function bilanz(){
+  const s=stats,task=statusData&&statusData.task;
+  const live=task&&task.status==='running'?task:null;
+  const liveCount=live?Math.max(0,(live.completed||0)-(live.skipped||0)):0;
+  return {live,
+    runs:(s&&s.runs)||0,
+    count:((s&&s.files_converted)||0)+liveCount,
+    before:((s&&s.bytes_before)||0)+(live?(live.bytes_before_done||0):0),
+    after:((s&&s.bytes_after)||0)+(live?(live.bytes_after_done||0):0),
+    saved:((s&&s.bytes_saved)||0)+(live?(live.bytes_saved||0):0),
+    empty:!s||!s.runs};
+}
+function pctTxt(b,a){const p=b?Math.round((b-a)/b*100):0;return(!b||p===0)?'±0'+NBSP+'%':(p>0?'−':'+')+Math.abs(p)+NBSP+'%';}
+
+function renderReclaim(){
+  const b=bilanz(),hide=b.empty&&!b.live;
+  $('rcEmpty').classList.toggle('hidden',!hide);
+  $('rcTiles').classList.toggle('hidden',hide);
+  $('rcMeta').classList.toggle('hidden',hide);
+  // Netto-Bilanz: positiv = zurückgewonnen, negativ = zusätzlich belegt.
+  const loss=b.saved<0;
+  $('rcNum').textContent=b.saved===0?'0'+NBSP+'GB':(loss?'+':'')+fmtBytes(Math.abs(b.saved),1);
+  $('rcNum').className=loss?'loss':'';
+  $('rcWord').textContent=loss?'zusätzlich belegt':'zurückgewonnen';
+  $('rcNote').textContent=loss?'Die konvertierten Dateien sind zusammen größer als die Originale – für dieses Material bringt das gewählte Format keine Ersparnis.':'';
+  $('rcNote').classList.toggle('hidden',!loss||hide);
+  if(hide)return;
+  const meta=clear($('rcMeta'));
+  if(b.runs){meta.appendChild(el('span','num',b.count));meta.appendChild(txt(' Dateien · '));
+    meta.appendChild(el('span','num',plural(b.runs,'Lauf','Läufe')));meta.appendChild(document.createElement('br'));
+    meta.appendChild(txt('zuletzt '));meta.appendChild(el('span','num',stats&&stats.last_run?fmtDate(stats.last_run):'–'));}
+  else meta.appendChild(el('span',null,'erster Lauf'));
+  renderTiles();
+}
+
+/* Kacheln – wortgleich mit dem Verlauf. Zuwachs bekommt eine eigene
+   Beschriftung, sonst stünde "+728 KB" unter "Gespart". */
+function renderTiles(){
+  const b=bilanz(),saved=b.before-b.after,grew=saved<0;
+  $('tFiles').textContent=b.count.toLocaleString('de-DE');
+  $('tFilesSub').textContent=b.live?'davon '+plural(Math.max(0,(b.live.completed||0)-(b.live.skipped||0)),'Datei','Dateien')+' im Lauf'
+                                   :(b.runs?'in '+plural(b.runs,'Lauf','Läufen'):'noch kein Lauf');
+  $('tFilesSub').className='sub'+(b.live?' live':'');
+  $('tSavedLbl').textContent=grew?'Zusätzlich belegt':'Gespart';
+  $('tSaved').textContent=(grew?'+':'')+fmtBytes(Math.abs(saved),1);
+  $('tSaved').className='v '+(grew?'red':'mint');
+  $('tSavedSub').textContent=b.count?fmtBytes(b.before,1)+' → '+fmtBytes(b.after,1):'–';
+  $('tPctLbl').textContent=grew?'Zuwachs':'Reduktion';
+  $('tPct').textContent=b.count?pctTxt(b.before,b.after):'±0'+NBSP+'%';
+  $('tPct').className='v '+(grew?'red':'');
+  $('tPctSub').textContent=b.count?'der ursprünglichen Größe':'–';
+}
+
+// ── Folder browser ────────────────────────────────────
+async function browseFolder(rel){
+  curPath=rel;
+  try{
+    const d=await api('/folders?path='+encodeURIComponent(rel));
+    folders=d.folders||[];sysFolders=d.system||[];mediaCount=d.media_count||0;mediaBytes=d.media_bytes||0;
+    renderBrowser();
+  }catch(e){toast(e.message,true);}
+}
+function toggleSys(){showSys=$('sysChk').checked;renderBrowser();}
+function renderBrowser(){
+  const bc=clear($('bc'));
+  const mk=(label,path,icon,cur)=>{const b=document.createElement('button');b.type='button';b.className=cur?'cur':'';b.title='/media'+(path?'/'+path:'');if(icon)b.appendChild(ico(icon));b.appendChild(txt(label));b.onclick=()=>browseFolder(path);return b;};
+  const parts=curPath?curPath.split('/'):[];
+  bc.appendChild(mk('media','',parts.length?'folder':'folder-open',!parts.length));
+  parts.forEach((p,i)=>{bc.appendChild(ico('chevron-right','sep'));bc.appendChild(mk(p,parts.slice(0,i+1).join('/'),null,i===parts.length-1));});
+  // Systemordner-Schalter gibt es nur auf der Wurzel – beim Verlassen zurücksetzen, sonst blieben Punkt-Ordner unsichtbar aktiv.
+  if(curPath&&showSys){showSys=false;$('sysChk').checked=false;}
+  $('sysWrap').classList.toggle('hidden',!(curPath===''&&sysFolders.length));
+  const list=clear($('flist'));
+  const add=(name,sys)=>{const b=document.createElement('button');b.type='button';b.className='fi'+(sys?' sys':'');const sub=curPath?curPath+'/'+name:name;
+    b.title='/media/'+sub;
+    b.appendChild(ico('folder'));b.appendChild(el('span',null,name));b.appendChild(ico('chevron-right','go'));
+    b.onclick=()=>browseFolder(sub);list.appendChild(b);};
+  if(curPath){const up=document.createElement('button');up.type='button';up.className='fi';up.appendChild(ico('chevron-left'));up.appendChild(el('span',null,'Übergeordneter Ordner'));up.onclick=()=>{const p=curPath.split('/');p.pop();browseFolder(p.join('/'));};list.appendChild(up);}
+  folders.forEach(n=>add(n,false));
+  if(showSys)sysFolders.forEach(n=>add(n,true));
+  if(!folders.length&&!(showSys&&sysFolders.length)){const e=document.createElement('div');e.className='fempty';e.textContent=mediaCount?'Keine Unterordner':'Keine Unterordner und keine Mediendateien';list.appendChild(e);}
+  $('fInfo').textContent=curPath?`${plural(mediaCount,'Datei','Dateien')} · ${fmtBytes(mediaBytes)} in diesem Ordner`:'Wurzel – wähle ein Volume';
+  updateAddBtn();
+}
+// ── Ordner-Auswahl (Sammelauftrag) ────────────────────────────
+function pickTotals(){return picks.reduce((a,p)=>({n:a.n+1,total:a.total+(p.total||0),bytes:a.bytes+(p.bytes||0),video:a.video+(p.video||0),audio:a.audio+(p.audio||0)}),{n:0,total:0,bytes:0,video:0,audio:0});}
+function pickPaths(){return picks.map(p=>p.path);}
+// Warum kann der aktuelle Ordner nicht hinzugefügt werden? (null = kann)
+function addReason(path){
+  if(!path)return{ic:'folder-open',text:'Erst ein Volume öffnen',title:'Öffne zuerst einen Ordner unterhalb der Wurzel – die Wurzel selbst lässt sich nicht konvertieren.'};
+  if(picks.some(p=>p.path===path))return{ic:'check',text:'Bereits ausgewählt',title:'/media/'+path+' steht schon in der Auswahl.'};
+  const parent=picks.find(p=>isUnder(path,p.path));
+  if(parent)return{ic:'folder-open',text:'In '+kurzText(shortFolder(parent.path),28)+' enthalten',title:'Dieser Ordner wird über /media/'+parent.path+' bereits mit erfasst.'};
+  const merges=picks.filter(p=>isUnder(p.path,path)).length;
+  if(picks.length-merges>=MAX_ORDNER)return{ic:'alert',text:'Auswahl voll – '+MAX_ORDNER+' Ordner',title:'Pro Auftrag sind '+MAX_ORDNER+' Ordner möglich – entferne zuerst einen.'};
+  return null;
+}
+function updateAddBtn(){
+  const b=$('useBtn'),r=addReason(curPath);
+  b.disabled=!!r;
+  clear(b);b.appendChild(ico(r?r.ic:'plus'));b.appendChild(el('span','lbl',r?r.text:'Ordner hinzufügen'));
+  b.title=r?r.title:('/media/'+curPath+' zum Auftrag hinzufügen');
+}
+async function addFolder(){
+  const path=curPath;
+  if(addReason(path))return;
+  const b=$('useBtn');b.disabled=true;
+  try{
+    // Nur der NEUE Ordner wird gescannt – die Zahlen der bereits gewählten stehen schon
+    // in `picks`. Sonst liefe bei 50 Ordnern jedes Hinzufügen 50 Bäume erneut ab.
+    const d=await api('/scan',{method:'POST',body:JSON.stringify({folders:[path]})});
+    const o=(Array.isArray(d.ordner)&&d.ordner.length)?d.ordner[0]:null;
+    // Der Pfad kommt aus dem GEPRÜFTEN Ordner des Servers, nie aus dem Rohtext (I1b)
+    const p=(o&&o.folder!=null)?String(o.folder):path;
+    const eintrag={path:p,total:(o?o.total:d.total)||0,bytes:(o?o.bytes:d.bytes)||0,
+                   video:(o?o.video:d.video_count)||0,audio:(o?o.audio:d.audio_count)||0};
+    const merged=picks.filter(x=>isUnder(x.path,p)&&x.path!==p).length;
+    picks=picks.filter(x=>!isUnder(x.path,p)).concat([eintrag]);
+    pickErrs=[];                       // die alte Meldung gehörte zum letzten Versuch
+    renderPicks(p);
+    if(!eintrag.total)toast(`${shortFolder(p)} hinzugefügt – hier liegen keine Mediendateien, auch nicht in Unterordnern.`,true);
+    else if(merged)toast(`${shortFolder(p)} hinzugefügt – ${merged===1?'der bereits gewählte Unterordner steckt':merged+' bereits gewählte Unterordner stecken'} jetzt darin.`,false,5000);
+    else toast(`${shortFolder(p)} hinzugefügt.`);
+  }catch(e){toast(e.message,true);}
+  resetPrescan();updateAddBtn();
+}
+function removePick(path){
+  const i=picks.findIndex(p=>p.path===path);
+  picks=picks.filter(p=>p.path!==path);
+  pickErrs=[];                         // die Meldung gehörte zum Hinzufügen, nicht zum Zustand
+  renderPicks();
+  // Tastaturfokus nicht im Nirwana lassen: nächste Zeile, sonst vorherige, sonst der Knopf
+  const rows=$('pickList').children,next=rows[Math.min(Math.max(i,0),rows.length-1)];
+  const nb=next?next.querySelector('button'):null;
+  (nb||$('useBtn')).focus();
+  resetPrescan();
+}
+function renderPicks(neu){
+  const s=pickTotals();
+  $('pickH').textContent=s.n?`Ordner (${s.n})`:'Ordner';
+  $('pickEmpty').classList.toggle('hidden',!!s.n);
+  $('pickBox').classList.toggle('hidden',!s.n);
+  const list=clear($('pickList'));
+  picks.forEach(p=>{
+    const r=el('div','pick'+(p.total?'':' leer')+(p.path===neu?' neu':''));
+    r.dataset.path=p.path;r.setAttribute('role','listitem');
+    const body=el('div','pick-body');
+    const pa=el('span','p pathx');pa.title='/media/'+p.path;
+    fillPath(pa,p.path);body.appendChild(pa);
+    body.appendChild(el('span','num',p.total?`${plural(p.total,'Datei','Dateien')} · ${fmtBytes(p.bytes)}`:'leer – keine Mediendateien'));
+    r.appendChild(body);
+    const b=el('button','btn btn-ic');b.type='button';b.title='Aus der Auswahl entfernen';
+    b.setAttribute('aria-label','Ordner entfernen: '+p.path);
+    b.appendChild(ico('x'));b.onclick=()=>removePick(p.path);
+    r.appendChild(b);list.appendChild(r);
+  });
+  if(neu){list.scrollTop=list.scrollHeight;
+    const nr=list.querySelector('.pick.neu');
+    if(nr)setTimeout(()=>nr.classList.remove('neu'),1800);}
+  const err=clear($('pickErr'));err.classList.toggle('hidden',!pickErrs.length);
+  pickErrs.forEach(m=>{const d=el('div','pe');d.appendChild(ico('alert'));d.appendChild(el('span',null,m));err.appendChild(d);});
+  // Summenzeile erst ab zwei Ordnern – bei einem Ordner stünde dieselbe Zahl zweimal untereinander
+  const foot=clear($('pickFoot'));foot.classList.toggle('hidden',s.n<2);
+  if(s.n>1){
+    foot.appendChild(el('span','num',plural(s.n,'Ordner','Ordner')));foot.appendChild(txt(' · '));
+    foot.appendChild(el('span','num',plural(s.total,'Datei','Dateien')));foot.appendChild(txt(' · '));
+    foot.appendChild(el('span','num',fmtBytes(s.bytes)));foot.appendChild(txt(' gesamt'));
+  }
+  updateAddBtn();updateGo();
+}
+
+// ── Format / quality ──────────────────────────────────
+// TV-Reparatur verpackt nur um (Bild bleibt, neue Tonspur wird geprüft) – Qualitätsstufen
+// gibt es dabei nicht, und die Hinweise sprechen von Tonspuren statt Zielformat.
+const WARN_STD='Originale werden nach erfolgreicher Prüfung ersetzt. Ton- und Untertitelspuren bleiben erhalten.';
+const WARN_AUDIO='Audiodateien werden nach erfolgreicher Prüfung ersetzt. Aus Videos wird der Ton als eigene Datei danebengelegt – das Video bleibt unverändert.';
+const WARN_TV='Das Bild wird nicht neu berechnet. Die neue Tonspur wird vor dem Ersetzen auf Lippensynchronität geprüft; Originalton und Untertitel bleiben erhalten.';
+function setType(t){ftype=t;codec='';
+  $('qualSec').classList.toggle('hidden',t==='tvfix');
+  $('warnTxt').textContent=t==='tvfix'?WARN_TV:t==='audio'?WARN_AUDIO:WARN_STD;
+  $('psSkipH').textContent=t==='tvfix'?'Bereits TV-tauglich':'Bereits im Zielformat';
+  renderFormats();resetPrescan();}
+function renderFormats(){
+  const wrap=clear($('fmt'));const items=codecs[ftype]||{};
+  if(!codec){if(ftype==='video')codec=(items.h265&&items.h265.gpu)?'h265':Object.keys(items)[0]||'';else codec=Object.keys(items)[0]||'';}
+  Object.entries(items).forEach(([k,v])=>{
+    const [t,sub]=splitLabel(v.label);const isV=ftype==='video';
+    const gpuOk=isV&&!!v.gpu;
+    const l=el('label','fcard');
+    const inp=document.createElement('input');inp.type='radio';inp.name='codec';inp.value=k;inp.checked=(k===codec);
+    l.appendChild(inp);
+    const head=el('span','t');head.appendChild(el('b',null,t));if(sub)head.appendChild(el('small',null,sub));
+    l.appendChild(head);
+    if(isV){const bd=el('span','badge'+(gpuOk?' gpu':''));bd.appendChild(ico(gpuOk?'zap':'cpu'));bd.appendChild(txt(gpuOk?'GPU':'CPU'));
+      if(!gpuOk)bd.title='Diese Grafikkarte kann '+t+' nicht beschleunigen – läuft auf dem Prozessor, deutlich langsamer';
+      l.appendChild(bd);}
+    else if(v.ext)l.appendChild(el('span','badge',v.ext));
+    if(v.saving)l.appendChild(el('span','sv',v.saving));
+    if(v.hint)l.appendChild(el('span','hint',v.hint));
+    inp.onchange=()=>{codec=k;renderContainers();resetPrescan();};
+    wrap.appendChild(l);
+  });
+  renderContainers();
+  updateGo();
+}
+function renderContainers(){
+  const row=$('contRow'),seg=clear($('cseg'));
+  const conts=(ftype==='video'&&codec&&codecs.video[codec])?(codecs.video[codec].containers||[]):[];
+  if(conts.length<1){row.classList.add('hidden');container='';return;}
+  row.classList.remove('hidden');
+  if(!conts.includes(container))container=conts[0];   // Standard = erster (mkv)
+  conts.forEach(key=>{
+    const def=containerDefs[key]||{label:key.toUpperCase()};
+    const l=document.createElement('label');
+    const i=document.createElement('input');i.type='radio';i.name='cont';i.value=key;i.checked=(key===container);
+    i.onchange=()=>{container=key;renderContHint();resetPrescan();};
+    l.appendChild(i);l.appendChild(txt(def.label||key.toUpperCase()));seg.appendChild(l);
+  });
+  renderContHint();
+}
+function renderContHint(){const d=containerDefs[container];$('chint').textContent=d?(d.hint||''):'';}
+function renderQualities(){
+  const seg=clear($('qseg'));
+  if(!qualities.find(q=>q.key===quality))quality=qualities[1]?qualities[1].key:(qualities[0]?qualities[0].key:'balanced');
+  qualities.forEach(q=>{const l=document.createElement('label');
+    const i=document.createElement('input');i.type='radio';i.name='qual';i.value=q.key;i.checked=(q.key===quality);
+    i.onchange=()=>{quality=q.key;renderQualHint();};
+    l.appendChild(i);l.appendChild(txt(q.label));seg.appendChild(l);});
+  renderQualHint();
+}
+function renderQualHint(){const q=qualities.find(x=>x.key===quality);$('qhint').textContent=q?q.hint:'';}
+
+// ── Prescan / start ───────────────────────────────────
+function updateGo(){
+  const b=$('goBtn'),t=$('goTxt');
+  if(prescan){const n=prescan.to_convert.length;b.disabled=n===0;t.textContent=n?`${plural(n,'Datei','Dateien')} konvertieren (${fmtBytes(prescan.bytes_convert)})`:'Nichts zu konvertieren';}
+  else{
+    // Musik-Modus nimmt auch Videos (Ton herauslösen), darum zählen beide Sorten
+    const s=pickTotals(),n=ftype==='audio'?s.audio+s.video:s.video;
+    b.disabled=!(s.n&&n>0&&codec);
+    t.textContent=!s.n?'Zuerst einen Ordner hinzufügen'
+      :(!n)?(ftype!=='audio'?(s.n>1?'Keine Videodateien in der Auswahl':'Keine Videodateien in diesem Ordner'):(s.n>1?'Keine Mediendateien in der Auswahl':'Keine Mediendateien in diesem Ordner'))
+      :(s.n>1?plural(s.n,'Ordner','Ordner')+' analysieren':'Ordner analysieren');
+  }
+}
+function resetPrescan(){prescan=null;$('psSec').classList.add('hidden');updateGo();}
+async function startFlow(){
+  if(!picks.length||!codec)return;
+  if(!prescan){await runPrescan();return;}
+  const files=prescan.to_convert.map(f=>f.path);if(!files.length)return;
+  const b=$('goBtn');b.disabled=true;
+  try{
+    const d=await api('/convert',{method:'POST',body:JSON.stringify({folders:pickPaths(),codec,type:ftype,quality,container,files})});
+    if(d.position>0)toast(`In die Warteschlange gestellt – Position ${d.position}.`);else toast('Konvertierung gestartet.');
+    prescan=null;$('psSec').classList.add('hidden');userExpanded=false;
+    // Der Auftrag ist abgegeben: die Auswahl wird geleert, damit der nächste
+    // Auftrag frisch beginnt und niemand versehentlich dieselben Ordner erneut
+    // startet. Übrig gebliebene Server-Meldungen kommen als Hinweis, nicht als
+    // Zeile unter einer Liste, die es nicht mehr gibt.
+    if(d.fehler&&d.fehler.length)toast(d.fehler.map(x=>String(x)).join(' · '),true);
+    picks=[];pickErrs=[];renderPicks();
+    updateGo();
+    refreshNow();
+  }catch(e){toast(e.message,true);b.disabled=false;}
+}
+async function runPrescan(){
+  const sum=pickTotals();
+  const ov=$('scanOv');ov.classList.add('on');$('scanDone').textContent='0';$('scanTotal').textContent=sum.total||'…';$('scanBar').querySelector('i').style.width='0%';
+  $('scanH').textContent=sum.n>1?`${plural(sum.n,'Ordner','Ordner')} werden analysiert`:'Ordner wird analysiert';
+  try{
+    const st=await api('/prescan',{method:'POST',body:JSON.stringify({folders:pickPaths(),codec,type:ftype})});
+    if(st.fehler&&st.fehler.length){pickErrs=st.fehler.map(x=>String(x));renderPicks();}
+    let r;
+    for(;;){
+      await new Promise(x=>setTimeout(x,500));
+      r=await api('/prescan/'+encodeURIComponent(st.scan_id));
+      const tot=r.total||sum.total||0;
+      $('scanDone').textContent=r.done||0;$('scanTotal').textContent=tot||'…';
+      $('scanBar').querySelector('i').style.width=(tot?Math.min(100,(r.done||0)/tot*100):0)+'%';
+      if(r.status==='done'||r.status==='error')break;
+    }
+    if(r.status==='error')throw new Error(r.error||'Analyse fehlgeschlagen.');
+    prescan=r.result;prescan.corrupt=prescan.corrupt||[];prescan.to_skip=prescan.to_skip||[];
+    renderPrescan();
+  }catch(e){toast(e.status===409?'Es läuft bereits eine Analyse – warte kurz und versuche es erneut.':e.message,true);}
+  ov.classList.remove('on');
+}
+function renderPrescan(){
+  if(!prescan)return;
+  const cv=prescan.to_convert,sk=prescan.to_skip,co=prescan.corrupt;
+  $('psSec').classList.remove('hidden');
+  const tiles=clear($('psTiles'));
+  const tile=(val,lab,cls)=>{const d=el('div','tile');d.appendChild(el('b',cls,val));d.appendChild(el('small',null,lab));tiles.appendChild(d);};
+  tile(cv.length,'zu konvertieren','amber');tile(sk.length,'bereits OK');tile(co.length,'defekt',co.length?'red':'');tile(fmtBytes(prescan.bytes_convert),'Größe');
+  const multi=picks.length>1;   // Quellordner nur zeigen, wenn er etwas unterscheidet
+  const fill=(id,arr)=>{const host=clear($(id));
+    arr.forEach(f=>{const r=el('div','dl-row');r.dataset.path=f.path==null?'':f.path;
+      const nm=el('span','nm');nm.title=f.path==null?'':f.path;
+      nm.appendChild(el('b',null,f.name));
+      const sub=multi?srcLine(f):'';
+      nm.appendChild(fillPath(el('small','pathx'+(sub?' on':'')),sub));
+      r.appendChild(nm);r.appendChild(el('span','cd',f.codec||''));r.appendChild(el('span','sz',fmtBytes(f.size)));
+      host.appendChild(r);});};
+  $('psConv').classList.toggle('hidden',!cv.length);$('psConvN').textContent='('+cv.length+')';fill('psConvL',cv);
+  $('psSkip').classList.toggle('hidden',!sk.length);$('psSkipN').textContent='('+sk.length+')';fill('psSkipL',sk);
+  $('psCorr').classList.toggle('hidden',!co.length);$('psCorrN').textContent='('+co.length+')';
+  const cl=clear($('psCorrL'));
+  co.forEach(f=>{const r=el('div','dl-row');r.dataset.path=f.path==null?'':f.path;
+    const nm=el('span','nm');nm.title=f.path==null?'':f.path;
+    nm.appendChild(el('b',null,f.name));
+    const sub=multi?srcLine(f):'';nm.appendChild(fillPath(el('small','pathx'+(sub?' on':'')),sub));
+    r.appendChild(nm);
+    const b=el('button','btn btn-sm btn-d');b.type='button';b.appendChild(ico('trash'));b.appendChild(txt('Löschen'));
+    b.onclick=()=>deleteCorrupt(f.path,b);
+    r.appendChild(b);cl.appendChild(r);});
+  if(co.length)$('psCorr').open=true;
+  updateGo();
+  if(!cv.length)toast(co.length?`Nichts zu konvertieren – ${plural(co.length,'defekte Datei','defekte Dateien')} gefunden.`:(ftype==='tvfix'?'Nichts zu tun – alle Dateien sind bereits TV-tauglich (oder keine MKV).':'Alle Dateien sind bereits im Zielformat.'));
+}
+async function deleteCorrupt(path,btn){
+  if(!confirm('Datei wirklich löschen?\n'+path))return;
+  btn.disabled=true;
+  try{await api('/delete-file',{method:'POST',body:JSON.stringify({path})});prescan.corrupt=prescan.corrupt.filter(f=>f.path!==path);renderPrescan();toast('Datei gelöscht.');}
+  catch(e){toast(e.message,true);btn.disabled=false;}
+}
+async function deleteAllCorrupt(){
+  const co=prescan&&prescan.corrupt||[];if(!co.length)return;
+  if(!confirm(`Alle ${co.length} defekten Dateien wirklich löschen?`))return;
+  let n=0;for(const f of [...co]){try{await api('/delete-file',{method:'POST',body:JSON.stringify({path:f.path})});prescan.corrupt=prescan.corrupt.filter(x=>x.path!==f.path);n++;}catch(e){console.error(e);}}
+  renderPrescan();toast(`${plural(n,'Datei','Dateien')} gelöscht.`,n!==co.length);
+}
+
+// ── Live data (SSE + poll fallback) ───────────────────
+function startLive(){
+  if(es||pollTimer)return;
+  if(!('EventSource' in window))return startPoll();
+  try{es=new EventSource('/api/events');}catch(e){return startPoll();}
+  esGotData=false;
+  esWatch=setTimeout(()=>{if(es&&!esGotData)fallback();},8000);
+  es.onmessage=e=>{esFails=0;esGotData=true;try{applyStatus(JSON.parse(e.data));}catch(x){console.error(x);}};
+  es.addEventListener('done',e=>{esGotData=true;try{onDone(JSON.parse(e.data));}catch(x){}});
+  es.onerror=()=>{if(es&&es.readyState===EventSource.CLOSED)return fallback();if(++esFails>=3)fallback();};
+  refreshNow();
+}
+function fallback(){if(es){es.close();es=null;}clearTimeout(esWatch);esWatch=null;esGotData=false;startPoll();}
+function startPoll(){const ms=prevRunning?1000:5000;if(pollTimer&&pollMs===ms)return;clearInterval(pollTimer);pollMs=ms;pollTimer=setInterval(refreshNow,ms);}
+function stopLive(){if(es){es.close();es=null;}clearInterval(pollTimer);pollTimer=null;clearTimeout(esWatch);esWatch=null;esGotData=false;}
+async function refreshNow(){try{applyStatus(await api('/status'));}catch(e){console.error('status',e);}}
+
+function applyStatus(d){
+  stateLoaded=true;statusData=d;
+  const task=d.task||null,running=!!(task&&task.status==='running');
+  const shown=task||d.last||null;
+  // Job-Ende erkennen: Wechsel der Job-ID deckt auch den Fall ab, dass sofort der
+  // nächste Warteschlangen-Job startet (dann bleibt `running` durchgehend true).
+  const curId=task?task.id:null;
+  if(prevTaskId&&curId!==prevTaskId){
+    const fin=d.last&&d.last.id===prevTaskId?d.last:null;
+    if(fin&&fin.status==='done')onDone(fin);
+    else if(fin||!running)afterFinish();
+  }
+  if(running&&!prevRunning){userExpanded=false;}
+  prevRunning=running;prevTaskId=curId;
+  document.body.classList.toggle('running',running);
+  $('jobCard').classList.toggle('expanded',userExpanded);
+  $('colBtn').classList.toggle('hidden',!(running&&userExpanded));
+  if(running){$('colSum').textContent=`${shortFolder(task.folder)} → ${targetName(task)}`+(task.type==='tvfix'?'':` · ${qualLabel(task.quality)}`);
+    $('colSum').title=jobFolders(task).map(f=>'/media/'+f).join('\n');}
+  renderRun(shown,running,d.queue||[]);
+  renderReclaim();
+  if(pollTimer)startPoll();
+  document.title=running?`${Math.round(task.progress||0)}${NBSP}% · Media Converter`:(document.title.startsWith('✓')?document.title:'Media Converter');
+}
+function expandJob(){userExpanded=true;$('jobCard').classList.add('expanded');$('colBtn').classList.remove('hidden');}
+function collapseJob(){userExpanded=false;$('jobCard').classList.remove('expanded');$('colBtn').classList.add('hidden');}
+function afterFinish(){loadStats();updateGo();}
+let doneShown='';
+function onDone(t){
+  if(!t||doneShown===t.id)return;doneShown=t.id;
+  const n=t.completed||0,saved=t.bytes_saved||0;
+  const ok=Math.max(0,n-(t.skipped||0)),fe=t.failed||0;
+  const msg=t.type==='tvfix'?`Fertig: TV-Ton bei ${plural(ok,'Datei','Dateien')} ergänzt`+(t.skipped?`, ${t.skipped} bereits tauglich`:'')+(fe?`, ${fe} verworfen (Original unverändert)`:'')
+    :`Fertig: ${plural(n,'Datei','Dateien')}, ${fmtBytes(saved)} gespart`;
+  toast(msg);document.title='✓ Fertig – Media Converter';
+  if(notifyOn()&&'Notification' in window&&Notification.permission==='granted'){try{new Notification('Media Converter',{body:msg});}catch(e){}}
+  afterFinish();
+}
+
+// ── Run card rendering ────────────────────────────────
+function renderRun(t,running,queue){
+  const chip=$('runChip');
+  $('cancelBtn').classList.toggle('hidden',!running);
+  $('hideBtn').classList.toggle('hidden',running||!t);
+  renderQueue(queue);
+  if(!t){chip.className='status';chip.lastElementChild.textContent='Kein Auftrag';$('runEmpty').classList.remove('hidden');$('runSum').classList.add('hidden');$('fileSec').classList.add('hidden');$('skipSec').classList.add('hidden');clear($('fileList'));setMini(false);return;}
+  const st=t.status;
+  chip.className='status '+(st==='running'?'run':st==='done'?'ok':st==='cancelled'?'bad':'');
+  chip.lastElementChild.textContent=st==='running'?'Läuft':st==='done'?'Fertig':st==='cancelled'?'Abgebrochen':'Wartet';
+  $('runEmpty').classList.add('hidden');$('runSum').classList.remove('hidden');$('fileSec').classList.remove('hidden');
+  const jf=jobFolders(t),multi=jf.length>1;
+  $('rtFolder').textContent=shortFolder(t.folder);
+  $('rtFolder').title=jf.length?jf.map(f=>'/media/'+f).join('\n'):'/media/'+(t.folder||'');
+  $('rtTarget').textContent=targetName(t);$('rtQual').textContent=t.quality&&t.type!=='tvfix'?'· '+qualLabel(t.quality):'';
+  const bar=$('tBar');bar.className='bar'+(st==='running'?' live':st==='done'?' ok':st==='cancelled'?' bad':'');bar.firstElementChild.style.width=(t.progress||0)+'%';
+  const files=t.files||[],conv=files.filter(f=>f.status==='converting'),speed=conv.reduce((a,f)=>a+(f.speed||0),0);
+  const pct=Math.round(t.progress||0);
+  const meta=clear($('tMeta'));
+  const push=n=>{if(meta.firstChild)meta.appendChild(el('span',null,'·'));meta.appendChild(n);};
+  push(el('b',null,pct+NBSP+'%'));
+  if(st==='running'){push(txt('ETA '+fmtEta(t.eta)));push(txt(fmtBytes(t.bytes_done)+' / '+fmtBytes(t.bytes_total)));if(speed)push(txt(fmtX(speed)));}
+  else{push(txt((t.completed||0)+' von '+(t.total||0)+' konvertiert'));if(t.failed)push(el('span','red',plural(t.failed,'Fehler','Fehler')));if(t.skipped)push(txt(t.skipped+' übersprungen'));}
+  const bb=t.bytes_before_done||0,ba=t.bytes_after_done||0,sv=bb-ba;
+  const grew=sv<0;   // Zuwachs statt Ersparnis: eigene Beschriftung + Rot, sonst bliebe "Gespart +728 KB" stehen
+  $('pgBefore').textContent=fmtBytes(bb);$('pgAfter').textContent=fmtBytes(ba);
+  $('pgSaved').textContent=bb?(grew?'+':'')+fmtBytes(Math.abs(sv)):'–';
+  $('pgSaved').className=grew?'red':'mint';$('pgSavedLbl').textContent=grew?'Zusätzlich belegt':'Gespart';
+  $('pgPct').textContent=bb?fmtPct(sv/bb*100):'–';
+  $('pgPct').className=grew?'red':'';$('pgPctLbl').textContent=grew?'Zuwachs':'Reduktion';
+  renderFiles(files.filter(f=>f.status!=='skipped'),multi,t.type==='tvfix');
+  renderSkipped(files.filter(f=>f.status==='skipped'),multi);
+  setMini(running);
+  if(running){$('miniFill').style.width=(t.progress||0)+'%';
+    const mt=clear($('miniTxt'));mt.appendChild(el('b',null,pct+NBSP+'%'));mt.appendChild(txt(' · ETA '+fmtEta(t.eta)+(speed?' · '+fmtX(speed):'')));}
+}
+function renderFiles(files,multi,tv){
+  const list=$('fileList');$('fileCnt').textContent='('+files.length+')';
+  const seen=new Set();
+  files.forEach((f,i)=>{
+    seen.add(f.path);
+    let row=list.querySelector(`.row[data-path="${CSS.escape(f.path)}"]`);
+    if(!row){
+      row=document.createElement('div');row.className='row';row.dataset.path=f.path;
+      row.innerHTML='<span class="n"></span><span class="nm"><b></b><small class="pathx"></small></span><span class="st"><span class="sb"><i></i></span><span class="tx"></span></span><span class="er"></span>';
+      const ref=list.children[i];list.insertBefore(row,ref||null);
+    }
+    const n=row.children[0],nm=row.children[1],st=row.children[2],er=row.children[3];
+    if(n.textContent!==String(i+1))n.textContent=i+1;
+    const b=nm.firstElementChild,s=nm.lastElementChild;
+    if(b.textContent!==f.name){b.textContent=f.name;}
+    if(b.title!==f.path)b.title=f.path;
+    const sub=multi?srcLine(f):(f.rel_dir||'');
+    if(s.dataset.v!==sub){s.dataset.v=sub;fillPath(s,sub);}
+    s.classList.toggle('on',!!sub);
+    // Zuwachs: die Balkenfuellung waere sonst voll mint, also "Erfolg", obwohl die Datei groesser wurde
+    const grew=!tv&&f.status==='done'&&f.size_after!=null&&f.size_before>0&&f.size_after>f.size_before;
+    const cls='row '+f.status+(grew?' grew':'');if(row.className!==cls)row.className=cls;
+    const fill=st.firstElementChild.firstElementChild,tx=st.lastElementChild;
+    let stx='',w='0%',tip='';
+    if(f.status==='converting'){w=(f.progress||0)+'%';stx=[Math.round(f.progress||0)+NBSP+'%',fmtClock(f.eta),f.speed?fmtX(f.speed):'',f.method||''].filter(Boolean).join(' · ');}
+    else if(f.status==='done'&&f.quelle_bleibt){w='100%';stx=f.size_after!=null?`Ton herausgelöst · ${fmtBytes(f.size_after)} · Video bleibt`:'fertig';
+      tip=f.method?'Verfahren: '+f.method:'';}
+    else if(f.status==='done'){const p=f.size_before?f.size_after/f.size_before*100:0;w=Math.max(2,Math.min(100,p))+'%';stx=f.size_after!=null?`${fmtBytes(f.size_before)} → ${fmtBytes(f.size_after)} (${fmtPct(100-p)})`:'fertig';
+      const sa=f.streams_after||f.streams_before;if(sa)tip=`${sa.a||0} Audio · ${sa.s||0} Untertitel erhalten`+(f.method?' · '+f.method:'')+(f.sync?' · Ton '+f.sync:'');}
+    else if(f.status==='error'){stx='Fehler';w='0%';}
+    else if(f.status==='cancelled'){stx='abgebrochen';}
+    else{stx='wartend';}
+    if(fill.style.width!==w)fill.style.width=w;
+    if(tx.textContent!==stx)tx.textContent=stx;
+    if(st.title!==tip)st.title=tip;
+    const em=f.status==='error'?(f.error||'Unbekannter Fehler – Quelle bleibt unverändert.'):'';
+    if(er.textContent!==em)er.textContent=em;
+  });
+  Array.from(list.children).forEach(r=>{if(!seen.has(r.dataset.path))r.remove();});
+}
+function renderSkipped(sk,multi){
+  $('skipSec').classList.toggle('hidden',!sk.length);$('skipCnt').textContent='('+sk.length+')';
+  const list=$('skipList');const key=(multi?'m:':'s:')+sk.map(f=>f.path).join('\n');
+  if(list.dataset.key===key)return;list.dataset.key=key;
+  clear(list);
+  sk.forEach((f,i)=>{
+    const r=el('div','row skipped');r.dataset.path=f.path==null?'':f.path;
+    r.appendChild(el('span','n',i+1));
+    const nm=el('span','nm');const b=el('b',null,f.name);b.title=f.path==null?'':f.path;
+    const sub=multi?srcLine(f):(f.rel_dir||'');
+    nm.appendChild(b);nm.appendChild(fillPath(el('small','pathx'+(sub?' on':'')),sub));
+    r.appendChild(nm);
+    const st=el('span','st');st.appendChild(el('span','tx',(f.method||'').replace(/^=/,'')+' · '+fmtBytes(f.size_before)));
+    r.appendChild(st);list.appendChild(r);});
+}
+function toggleSkip(){const l=$('skipList'),h=l.classList.toggle('hidden');$('skipTog').textContent=h?'Anzeigen':'Ausblenden';}
+function renderQueue(q){
+  $('queueSec').classList.toggle('hidden',!q.length);$('queueCnt').textContent='('+q.length+')';
+  const key=JSON.stringify(q);const l=$('queueList');if(l.dataset.key===key)return;l.dataset.key=key;
+  clear(l);
+  q.forEach((j,i)=>{
+    const id=j.id==null?'':String(j.id);
+    const r=el('div','q-row');r.dataset.id=id;
+    r.appendChild(el('span','n',i+1));
+    const jf=jobFolders(j);
+    const t=el('span','t',shortFolder(j.folder));
+    t.title=jf.length?jf.map(f=>'/media/'+f).join('\n'):'/media/'+(j.folder==null?'':j.folder);
+    t.appendChild(el('span',null,' → '+targetName(j)+(j.quality?' · '+qualLabel(j.quality):'')));
+    r.appendChild(t);
+    r.appendChild(el('span','num',plural(j.total||0,'Datei','Dateien')+' · '+fmtBytes(j.bytes_total)));
+    const b=el('button','btn btn-ic');b.type='button';b.title='Aus der Warteschlange entfernen';
+    b.setAttribute('aria-label','Aus der Warteschlange entfernen');b.dataset.rm=id;b.appendChild(ico('x'));
+    r.appendChild(b);l.appendChild(r);});
+}
+$('queueList').addEventListener('click',e=>{const b=e.target.closest('button[data-rm]');if(b&&b.dataset.rm)removeQueued(b.dataset.rm);});
+async function removeQueued(id){try{await api('/queue/'+encodeURIComponent(id),{method:'DELETE'});toast('Aus der Warteschlange entfernt.');refreshNow();}catch(e){toast(e.message,true);}}
+async function doCancel(){if(!confirm('Laufenden Auftrag abbrechen? Die aktuelle Datei bleibt im Original erhalten.'))return;try{await api('/cancel',{method:'POST'});toast('Auftrag abgebrochen.');refreshNow();}catch(e){toast(e.message,true);}}
+async function doClear(){
+  const q=statusData&&statusData.queue||[];
+  if(q.length&&!confirm(`Ausblenden leert auch die Warteschlange (${q.length}). Fortfahren?`))return;
+  try{await api('/clear',{method:'POST'});doneShown='';document.title='Media Converter';refreshNow();}catch(e){toast(e.message,true);}
+}
+
+// ── Sticky mini bar ───────────────────────────────────
+let miniOn=false,sumVisible=true;
+function setMini(on){miniOn=on;const m=$('mini');m.classList.toggle('on',on);m.classList.toggle('show',on&&!sumVisible);}
+if('IntersectionObserver' in window){new IntersectionObserver(en=>{sumVisible=en[0].isIntersecting||en[0].boundingClientRect.top>0;setMini(miniOn);},{threshold:0}).observe($('runSum'));}
+
+// ── Settings / notifications ──────────────────────────
+function notifyOn(){try{return localStorage.getItem('notify')==='1';}catch(e){return false;}}
+function updateNotifyUI(){const on=notifyOn()&&'Notification' in window&&Notification.permission==='granted';$('notifyTog').setAttribute('aria-checked',on?'true':'false');
+  $('notifySub').textContent=!('Notification' in window)?'Dieser Browser unterstützt keine Benachrichtigungen.':Notification.permission==='denied'?'Im Browser blockiert – in den Seiteneinstellungen erlauben.':'Fragt beim Einschalten nach Berechtigung.';}
+async function toggleNotify(){
+  if(!('Notification' in window))return;
+  if(notifyOn()){try{localStorage.setItem('notify','0');}catch(e){}return updateNotifyUI();}
+  let p=Notification.permission;if(p==='default'){try{p=await Notification.requestPermission();}catch(e){}}
+  if(p==='granted'){try{localStorage.setItem('notify','1');}catch(e){}toast('Du wirst benachrichtigt, wenn ein Lauf fertig ist.');}
+  updateNotifyUI();
+}
+async function openSettings(){
+  try{const d=await api('/auth-info');$('sUser').value=d.username;}catch(e){}
+  $('sNewUser').value='';$('sCurPw').value='';$('sNewPw').value='';$('sErr').classList.add('hidden');$('sOk').classList.add('hidden');
+  updateNotifyUI();$('setOv').classList.add('on');setTimeout(()=>$('sNewUser').focus(),50);
+}
+function closeSettings(){$('setOv').classList.remove('on');}
+async function saveCredentials(){
+  const cur=$('sCurPw').value,nu=$('sNewUser').value.trim(),np=$('sNewPw').value;
+  $('sErr').classList.add('hidden');$('sOk').classList.add('hidden');
+  if(!cur)return sErr('Bitte das aktuelle Passwort eingeben.');
+  if(!nu&&!np)return sErr('Neuen Benutzernamen oder neues Passwort eintragen.');
+  if(np&&np.length<6)return sErr('Das neue Passwort braucht mindestens 6 Zeichen.');
+  try{await api('/change-credentials',{method:'POST',body:JSON.stringify({current_password:cur,username:nu||undefined,password:np||undefined})});
+    $('sOk').classList.remove('hidden');$('sCurPw').value='';$('sNewPw').value='';if(nu)$('sUser').value=nu;$('sNewUser').value='';setTimeout(closeSettings,1200);}
+  catch(e){sErr(e.message);}
+}
+function sErr(m){$('sErr').textContent=m;$('sErr').classList.remove('hidden');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSettings();}});
+$('setOv').addEventListener('click',e=>{if(e.target===$('setOv'))closeSettings();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&$('app').style.display==='block')refreshNow();});
+
+checkAuth();
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+services:
+  media-converter:
+    build: .
+    container_name: fah-mediaconverter
+    restart: unless-stopped
+    # Niedrige CPU-Gewichtung (Standard 1024): Der Konverter nutzt freie Kerne voll aus,
+    # weicht aber sofort, wenn Plex (1024) oder die Kamera-KI (LocalEye 2048) rechnen muss.
+    cpu_shares: 256
+    ports:
+      - "8686:8686"
+    environment:
+      # Kein PUID/PGID/UMASK: das Image startet ohne den s6-Init von linuxserver
+      # (ENTRYPOINT [] im Dockerfile), der Container läuft als root. Die Zieldatei
+      # übernimmt statt dessen Besitzer, Gruppe, Rechte und mtime der Quelle.
+      - TZ=Europe/Berlin
+      - LIBVA_DRIVER_NAME=iHD
+      # 1, wenn die Oberfläche NUR über HTTPS erreichbar ist (Reverse-Proxy) – sonst 0
+      - COOKIE_SECURE=0
+      # 0 = Standard: X-Forwarded-For wird ignoriert, das Login-Rate-Limit zählt die Verbindungs-IP.
+      # 1 = nur hinter einem VERTRAUENSWÜRDIGEN Reverse-Proxy: dann zählt die vom Proxy
+      #     angehängte (rechteste) X-Forwarded-For-IP. Ohne echten Proxy niemals auf 1 setzen –
+      #     der Header ist frei fälschbar und die Sperre wäre wirkungslos.
+      - TRUST_PROXY=0
+      # Obergrenze für die Zwischendateien des Players (GB). Sie entstehen nur,
+      # wenn eine nicht browsertaugliche Hülle (MKV …) angesehen wird, und
+      # räumen sich selbst auf – älteste zuerst.
+      - MC_PLAY_CACHE_GB=4
+      # Nur diese Ordner direkt unter /media sichtbar/nutzbar (kommagetrennt); leer = alle.
+      # Wichtig, wenn du das ganze NAS (/) nach /media einhängst: sonst zeigt die
+      # Baumansicht jedes Volume. Beispiel: MC_ROOTS=volume1
+      - MC_ROOTS=
+    volumes:
+      - /volume1/medien:/media
+      - ./config:/config
+      - ./app:/app
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"
+      - "105"
+    shm_size: "2g"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"

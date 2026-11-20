@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verlauf – Media Converter</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c1f24'/%3E%3Cpolygon points='22 16 12 10 12 22' fill='%23f0b241'/%3E%3C/svg%3E">
+<script>
+/* Theme so früh wie möglich setzen (kein Aufblitzen): localStorage 'th' vor prefers-color-scheme */
+(function(){var t=null;try{t=localStorage.getItem('th')}catch(e){}
+if(t!=='dark'&&t!=='light')t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+document.documentElement.setAttribute('data-theme',t);})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#15171b;--surface:#1c1f24;--surface2:#242830;--line:#2f343c;--line2:#3a4049;
+  --text:#e9eaed;--dim:#8f96a1;--amber:#f0b241;--amber-ink:#1a1204;--mint:#4fd8a3;--red:#ff7070;--gray-fill:#4a505a;
+  --amber-soft:rgba(240,178,65,.14);--mint-soft:rgba(79,216,163,.14);--red-soft:rgba(255,112,112,.14);
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:8px;--rc:12px;
+}
+[data-theme="light"]{
+  --bg:#f2f1ed;--surface:#ffffff;--surface2:#eceae4;--line:#dcd9d1;--line2:#c9c5bb;
+  --text:#1c1e22;--dim:#646a75;--amber:#985b00;--amber-ink:#fff;--mint:#0c794f;--red:#c62a2f;--gray-fill:#b9b6ae;
+  --amber-soft:rgba(152,91,0,.13);--mint-soft:rgba(12,121,79,.13);--red-soft:rgba(198,42,47,.12);
+}
+html{background:var(--bg);color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
+body{font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.mint{color:var(--mint)}.red{color:var(--red)}
+.eyebrow{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim)}
+h1,h2,h3{font-weight:600;letter-spacing:-.01em}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--line2)}
+a.btn{text-decoration:none}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--line))}
+.btn-danger:hover{background:var(--red-soft)}
+.btn-icon{width:36px;height:36px;padding:0}
+.btn-ghost{background:transparent}
+
+/* Header */
+/* Streifen vollflaechig, Inhalt buendig zum Hauptbereich – sonst klebt das Logo
+   auf breiten Schirmen am Rand, waehrend der Inhalt weit in der Mitte beginnt. */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(24px,calc((100% - 1400px) / 2 + 24px));background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.top-l{display:flex;align-items:center;gap:14px;min-width:0}
+.top-l h1{font-size:17px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.top-l h1 .lamp{width:8px;height:8px;border-radius:50%;background:var(--amber);flex:none}
+.top-r{display:flex;align-items:center;gap:8px}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 24px 48px}
+
+/* Rückgewinn-Leiste */
+.reclaim{display:flex;flex-wrap:wrap;gap:28px;align-items:center;padding:20px 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--rc);margin-bottom:16px}
+.reclaim-num{flex:none;min-width:150px}
+.reclaim-num .big{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:34px;font-weight:500;line-height:1.1;color:var(--mint);letter-spacing:-.02em}
+.reclaim-num .big.loss{color:var(--red)}
+.reclaim-num .meta{font-size:12px;color:var(--dim);margin-top:6px}
+.reclaim-empty{flex:1;font-size:13px;color:var(--dim);padding:8px 0}
+.reclaim-note{flex-basis:100%;font-size:12.5px;color:var(--dim);line-height:1.45;margin-top:-10px}
+
+/* Kacheln */
+.tiles{flex:1;min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0}
+.tile .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:20px;font-weight:500;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .v.mint{color:var(--mint)}
+.tile .v.red{color:var(--red)}
+.tile .sub{font-size:11px;color:var(--dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Karten */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--rc);padding:18px 20px;margin-bottom:16px;min-width:0}
+.card-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.card-h h2{font-size:15px}
+.card-h .sub{font-size:12px;color:var(--dim)}
+
+/* Diagramm */
+.chart{position:relative;width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .zero{stroke:var(--line2);stroke-width:1.5}
+.chart .axis{font-family:var(--mono);font-size:10px;fill:var(--dim);font-variant-numeric:tabular-nums}
+.chart .bar{fill:var(--mint);cursor:pointer;transition:opacity .15s}
+.chart .bar.neg{fill:var(--red)}
+.chart .bar.old{fill:var(--gray-fill);cursor:default}
+.chart .bar:hover,.chart .bar:focus-visible{opacity:.75;outline:none}
+.chart .bar.on{stroke:var(--amber);stroke-width:2;paint-order:stroke}
+.chart .bar.dimmed{opacity:.35}
+.chart .hit{fill:transparent;cursor:pointer}
+.tip{position:absolute;z-index:4;pointer-events:none;background:var(--surface2);border:1px solid var(--line2);border-radius:var(--r);padding:8px 10px;font-size:12px;line-height:1.45;max-width:min(340px,calc(100vw - 32px));overflow-wrap:anywhere;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;transform:translate(-50%,calc(-100% - 8px));transition:opacity .12s}
+.tip.on{opacity:1}
+.tip b{display:block;font-weight:600}
+.tip .mono{color:var(--dim);white-space:nowrap}
+.chart-empty{padding:28px 0;text-align:center;color:var(--dim);font-size:13px}
+.chart-hint{font-size:11px;color:var(--dim);margin-top:6px}
+.chart-key{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--dim)}
+.chart-key span{display:inline-flex;align-items:center;gap:6px}
+.chart-key i{width:8px;height:8px;border-radius:1px;background:var(--mint);display:inline-block}
+.chart-key i.r{background:var(--red)}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.field{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.field:focus-within{border-color:var(--amber)}
+.field .ic{color:var(--dim)}
+.field input{flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:13px;height:100%}
+.field input::placeholder{color:var(--dim)}
+.search{flex:1 1 220px;min-width:160px}
+select.sel{height:36px;padding:0 30px 0 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f96a1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center/16px;appearance:none;-webkit-appearance:none;font-size:13px;cursor:pointer;outline:none}
+select.sel:focus-visible{border-color:var(--amber)}
+.lbl{font-size:12px;color:var(--dim);white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 6px 0 12px;border:1px solid var(--amber);border-radius:var(--r);color:var(--amber);font-size:13px;font-weight:500;max-width:100%;min-width:0}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip button{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;border-radius:6px;background:transparent;color:var(--amber);cursor:pointer}
+.chip button:hover{background:var(--amber-soft)}
+.spacer{flex:1}
+
+/* Liste */
+.list{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.grp{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;background:var(--surface2);border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+.list .grp:first-child{border-top:0}
+.grp b{color:var(--text);font-weight:600;font-size:13px}
+.grp .mono{font-size:12px}
+.grp .m{color:var(--mint)}
+.grp .l{color:var(--red)}
+.grp .del{margin-left:auto;padding:3px 6px;font-size:11px;line-height:1}
+.grp .del .ic{width:13px;height:13px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 300px auto;gap:6px 18px;align-items:center;padding:9px 14px;border-top:1px solid var(--line);min-width:0}
+/* ── Abspielen ── */
+.act{display:flex;gap:6px}
+.act .btn{padding:6px 8px}
+.ov{position:fixed;inset:0;background:rgba(10,11,14,.66);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(3px)}
+.ov.on{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line2);border-radius:var(--rc);padding:20px;width:100%;max-width:900px;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.modal h2{font-size:16px;margin-bottom:4px;overflow-wrap:anywhere}
+.modal p.sub{font-size:12px;color:var(--dim);margin-bottom:14px;overflow-wrap:anywhere}
+.pl-media{width:100%;max-height:70vh;border-radius:8px;background:#000;display:block}
+.pl-media[data-audio]{max-height:64px;background:transparent}
+.pl-note{text-align:center;padding:22px 10px}
+.pl-note .ic{width:30px;height:30px;margin-bottom:8px}
+.pl-bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin:12px 0 8px}
+.pl-bar i{display:block;height:100%;background:var(--amber);transition:width .25s linear}
+.pl-actions{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.row:hover{background:color-mix(in srgb,var(--surface2) 55%,transparent)}
+.row .nmw{min-width:0;overflow:hidden}
+.row .nm{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.row .rd{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st{display:flex;flex-direction:column;gap:5px;min-width:0}
+.sbar{position:relative;height:8px;border:1px solid var(--gray-fill);border-radius:3px;overflow:hidden}
+.sbar i{position:absolute;left:0;top:0;bottom:0;background:var(--mint);border-radius:2px}
+.sbar i.bad{background:var(--red)}
+.sline{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:11.5px;white-space:nowrap;min-width:0}
+.sline .sz{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sline .sz em{font-style:normal;color:var(--mint)}
+.sline .sz em.bad{color:var(--red)}
+.badge{flex:none;max-width:140px;overflow:hidden;text-overflow:ellipsis;font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:1px 6px;border-radius:5px;border:1px solid var(--line2);color:var(--dim)}
+.badge.gpu{color:var(--mint);border-color:color-mix(in srgb,var(--mint) 45%,var(--line))}
+.sline .tm{flex:none;color:var(--dim)}
+.empty{padding:40px 16px;text-align:center;color:var(--dim);font-size:13px;line-height:1.6}
+.empty .btn{margin-top:12px}
+
+/* Pager */
+.pager{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px 12px;margin-top:14px;font-size:13px;color:var(--dim)}
+.pager .mono{color:var(--text)}
+/* Seitenzahlen: direkt anspringen statt Seite für Seite blättern */
+.pgnums{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
+.pg{min-width:34px;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer;transition:border-color .15s}
+.pg:hover{border-color:var(--line2)}
+.pg.on{background:var(--amber);border-color:var(--amber);color:var(--bg);font-weight:600;cursor:default}
+.pg-gap{min-width:18px;text-align:center;align-self:center}
+.pgjump{display:flex;align-items:center;gap:6px}
+/* Schmal: Seitenzahlen als eigene erste Zeile, darunter ‹ › und das Sprungfeld */
+@media (max-width:560px){.pgnums{order:-1;flex-basis:100%}.pager .btxt{display:none}.pager #prevBtn,.pager #nextBtn{padding:8px 11px}}
+.pg-in{width:64px;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface2);color:var(--text);font-size:13px;font-variant-numeric:tabular-nums;text-align:center}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,80px);background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:10px 16px;border-radius:var(--r);font-size:13px;z-index:20;opacity:0;transition:transform .25s,opacity .25s;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
+.toast.on{transform:translate(-50%,0);opacity:1}
+.toast.err{border-color:var(--red);color:var(--red)}
+.toast.ok{border-color:var(--mint)}
+
+@media(max-width:1000px){.row{grid-template-columns:minmax(0,1fr) 280px}}
+@media(max-width:760px){.row{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){
+  .top{padding:10px 14px}.wrap{padding:14px 12px 40px}
+  .top-r .txt{display:none}
+  .reclaim{flex-direction:column;gap:14px;padding:16px}
+  .reclaim-num .big{font-size:28px}
+  .card{padding:14px}
+  .tiles{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+  .row{grid-template-columns:minmax(0,1fr)}
+  .search{flex-basis:100%}
+  .btn-clear .txt{display:none}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+</style>
+</head>
+<body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-folder-open" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H6.5a2 2 0 0 0-1.9 1.4L3 17z"/><path d="M3 17l1.6-5.6A2 2 0 0 1 6.5 10H22l-2.2 7.2a2 2 0 0 1-1.9 1.4H5a2 2 0 0 1-2-1.6z"/></symbol>
+  <symbol id="i-chevron-left" viewBox="0 0 24 24"><polyline points="15 6 9 12 15 18"/></symbol>
+  <symbol id="i-chevron-right" viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20 7 4"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V6l12-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="11" cy="17" r="2"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="top-l">
+    <a class="btn btn-ghost" href="/" id="backBtn" title="Zurück zum Konverter"><svg class="ic"><use href="#i-chevron-left"/></svg><span class="txt">Konverter</span></a>
+    <h1><span class="lamp" aria-hidden="true"></span>Verlauf</h1>
+  </div>
+  <div class="top-r">
+    <button class="btn btn-icon" id="thB" onclick="toggleTheme()" title="Hell/Dunkel umschalten" aria-label="Hell/Dunkel umschalten"><svg class="ic"><use href="#i-moon" id="thIcon"/></svg></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Rückgewinn-Leiste (B2, statisch aus totals) -->
+  <section class="reclaim" id="reclaim" aria-label="Zurückgewonnener Speicherplatz">
+    <div class="reclaim-num">
+      <div class="big" id="rcBig">0 B</div>
+      <div class="eyebrow" id="rcWord">zurückgewonnen</div>
+      <div class="meta" id="rcMeta">–</div>
+    </div>
+    <div class="tiles" id="tiles">
+      <div class="tile"><div class="eyebrow">Dateien</div><div class="v" id="tFiles">0</div><div class="sub" id="tFilesSub">–</div></div>
+      <div class="tile"><div class="eyebrow" id="tSavedLbl">Gespart</div><div class="v mint" id="tSaved">0 B</div><div class="sub" id="tSavedSub">–</div></div>
+      <div class="tile"><div class="eyebrow" id="tPctLbl">Reduktion</div><div class="v" id="tPct">0 %</div><div class="sub" id="tPctSub">–</div></div>
+    </div>
+    <div class="reclaim-empty" id="rcEmpty" style="display:none">Noch nichts konvertiert – starte im Konverter einen Auftrag.</div>
+    <div class="reclaim-note" id="rcNote" style="display:none"></div>
+  </section>
+
+  <!-- Diagramm -->
+  <section class="card" id="chartCard">
+    <div class="card-h"><h2>Ersparnis je Lauf</h2><div class="sub" id="chartSub"></div></div>
+    <div class="chart" id="chart">
+      <svg id="chartSvg" role="img" aria-label="Balkendiagramm: Ersparnis je Lauf"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="chart-key" id="chartKey" style="display:none"><span><i></i>Ersparnis (über der Linie)</span><span><i class="r"></i>Zuwachs (unter der Linie)</span></div>
+    <div class="chart-hint" id="chartHint">Klick auf einen Balken filtert die Liste nach diesem Lauf.</div>
+  </section>
+
+  <!-- Liste -->
+  <section class="card">
+    <div class="card-h"><h2>Konvertierte Dateien</h2><div class="sub" id="listSub"></div></div>
+    <div class="toolbar">
+      <label class="field search"><svg class="ic"><use href="#i-search"/></svg><span class="sr">Dateiname suchen</span><input id="q" type="search" placeholder="Dateiname suchen …" autocomplete="off"></label>
+      <label class="lbl" for="methodSel">Methode</label>
+      <select class="sel" id="methodSel" onchange="setFilter()"><option value="">Alle</option><option value="GPU">GPU</option><option value="GPU*">GPU*</option><option value="CPU">CPU</option><option value="Remux">Remux (TV-Ton)</option></select>
+      <div class="chip" id="runChip" style="display:none"><span id="runChipTxt"></span><button onclick="setRun('')" title="Lauf-Filter entfernen" aria-label="Lauf-Filter entfernen"><svg class="ic"><use href="#i-x"/></svg></button></div>
+      <div class="spacer"></div>
+      <label class="lbl" for="limitSel">Einträge/Seite</label>
+      <select class="sel" id="limitSel" onchange="page=1;load()"><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option><option value="all">Alle</option></select>
+      <button class="btn btn-danger btn-clear" id="clearBtn" onclick="clearHistory()" title="Verlauf löschen" aria-label="Verlauf löschen"><svg class="ic"><use href="#i-trash"/></svg><span class="txt">Verlauf löschen</span></button>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="pager" id="pager" style="display:none">
+      <button class="btn" id="prevBtn" onclick="gotoPage(page-1)" aria-label="Vorherige Seite"><svg class="ic"><use href="#i-chevron-left"/></svg><span class="btxt">Zurück</span></button>
+      <nav class="pgnums" id="pgNums" aria-label="Seiten"></nav>
+      <button class="btn" id="nextBtn" onclick="gotoPage(page+1)" aria-label="Nächste Seite"><span class="btxt">Weiter</span><svg class="ic"><use href="#i-chevron-right"/></svg></button>
+      <label class="pgjump" title="Seitenzahl eingeben und Enter drücken">Seite
+        <input class="pg-in" id="pgJump" type="number" min="1" value="1" inputmode="numeric" aria-label="Zu Seite springen"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();springeZuSeite(this.value);}" onchange="springeZuSeite(this.value)">
+        von <span class="mono" id="pgTot">1</span></label>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const NS='http://www.w3.org/2000/svg';
+let page=1,pages=1,filters={q:'',method:'',run:''},runsAll=[],runById={},
+    overall={count:0,bytes_before:0,bytes_after:0},loadSeq=0;
+const TARGET_LABEL={tvton:'TV-Ton',h265:'H.265',h264:'H.264',av1:'AV1',vp9:'VP9',mpeg4:'MPEG-4',mp3:'MP3',aac:'AAC',flac:'FLAC',opus:'Opus',ogg:'Ogg',wav:'WAV'};
+const QUAL_LABEL={fast:'Schnell',balanced:'Ausgewogen',high:'Hoch'};
+
+/* ---------- Theme ---------- */
+function applyThemeIcon(){const t=document.documentElement.getAttribute('data-theme');$('thIcon').setAttribute('href',t==='dark'?'#i-sun':'#i-moon');}
+function toggleTheme(){const d=document.documentElement,t=d.getAttribute('data-theme')==='dark'?'light':'dark';d.setAttribute('data-theme',t);try{localStorage.setItem('th',t)}catch(e){}applyThemeIcon();}
+applyThemeIcon();
+
+/* ---------- Helfer ---------- */
+function toast(m,cls=''){const t=$('toast');t.textContent=m;t.className='toast on '+cls;clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),3500);}
+async function api(p,o={}){
+  const r=await fetch('/api'+p,{headers:{'Content-Type':'application/json'},...o});
+  if(r.status===401){location.href='/';throw new Error('Nicht angemeldet');}
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(d.error||'Serverfehler ('+r.status+')');
+  return d;
+}
+const nf1=new Intl.NumberFormat('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf0=new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
+/* Escaping inkl. Anführungszeichen – Dateinamen dürfen " und ' enthalten.
+   Werte aus der API gehen sonst ausschließlich über textContent/setAttribute ins DOM. */
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function num(v){const n=Number(v);return isFinite(n)?n:0;}
+function fmtBytes(n){
+  if(n==null||isNaN(n))return'–';
+  const neg=n<0;n=Math.abs(n);const u=['B','KB','MB','GB','TB'];let i=0;
+  while(n>=1024&&i<u.length-1){n/=1024;i++;}
+  return (neg?'−':'')+(i>0?nf1.format(n):nf0.format(n))+' '+u[i];
+}
+function fmtDate(ts){return ts?new Date(ts*1000).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'';}
+function fmtTime(ts){return ts?new Date(ts*1000).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}):'';}
+function fmtDateTime(ts){return ts?fmtDate(ts)+', '+fmtTime(ts):'';}
+function fmtDur(s){s=Math.round(s);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?h+':'+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0'):m+':'+String(x).padStart(2,'0');}
+function pctOf(b,a){return b?Math.round((b-a)/b*100):0;}
+function pctTxt(b,a){const p=pctOf(b,a);return (!b||p===0)?'±0 %':(p>0?'−':'+')+Math.abs(p)+' %';}
+const GAP_RUN='vor-verlauf';
+/* Der Sammeleintrag entsteht bei der Migration und fasst alles zusammen, was die
+   Gesamtbilanz kennt, der Verlauf aber nicht mehr hergibt. Als "Lauf vom …"
+   behauptete er, an einem Tag entstanden zu sein. */
+function runLabel(r,withTime=true){
+  if(!r)return'';
+  if(r.run_id===GAP_RUN)return 'Frühere Läufe'+(r.runs?' ('+r.runs+')':'');
+  const legacy=String(r.run_id||'').startsWith('legacy-');
+  return 'Lauf vom '+(legacy||!withTime?fmtDate(r.timestamp):fmtDateTime(r.timestamp));
+}
+function tLabel(t){return TARGET_LABEL[t]||(t?String(t).toUpperCase():'');}
+function plural(n,s,p){return n+' '+(n===1?s:p);}
+/* Der Sammeleintrag aus der Migration steht für mehrere Läufe – als einer gezählt
+   meldete der Verlauf weniger Läufe als die Startseite aus derselben Bilanz. */
+function laufZahl(){return runsAll.reduce((n,r)=>n+(num(r.runs)||1),0);}
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;}
+function svgEl(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function icon(id){const s=svgEl('svg',{class:'ic'});s.appendChild(svgEl('use',{href:id}));return s;}
+function filtersActive(){return !!(filters.q||filters.method||filters.run);}
+function sumRuns(runs){return runs.reduce((x,r)=>{x.count+=num(r.count);x.bytes_before+=num(r.bytes_before);x.bytes_after+=num(r.bytes_after);return x;},{count:0,bytes_before:0,bytes_after:0});}
+/* Gesamtwerte: der Server liefert ungefilterte totals; falls doch gefilterte ankommen
+   (ältere Version), gewinnt die Summe über runs[] – runs ist laut API immer vollständig. */
+function pickTotals(t,runs){
+  const rs=sumRuns(runs);
+  const tt={count:num(t&&t.count),bytes_before:num(t&&t.bytes_before),bytes_after:num(t&&t.bytes_after)};
+  const gewaehlt=rs.count>tt.count?rs:tt;
+  gewaehlt.last_run=(t&&t.last_run)||null;
+  return gewaehlt;
+}
+
+/* ---------- Laden ---------- */
+async function load(){
+  const limit=$('limitSel').value;
+  const qs=new URLSearchParams({limit,page:String(page)});
+  if(filters.q)qs.set('q',filters.q);
+  if(filters.method)qs.set('method',filters.method);
+  if(filters.run)qs.set('run',filters.run);
+  const my=++loadSeq;
+  try{
+    const d=await api('/history?'+qs.toString());
+    if(my!==loadSeq)return;               // überholte Antwort verwerfen
+    page=d.page||1;pages=d.pages||1;
+    runsAll=Array.isArray(d.runs)?d.runs:[];runById={};runsAll.forEach(r=>runById[r.run_id]=r);
+    overall=pickTotals(d.totals,runsAll);
+    const hits=d.filtered_total!=null?num(d.filtered_total):num(d.total);
+    const listTotal=d.list_total!=null?num(d.list_total):hits;
+    renderReclaim();
+    renderTiles();
+    renderChart();
+    renderChip();
+    renderList(d.entries||[],hits,listTotal);
+    renderPager(limit);
+  }catch(e){if(my===loadSeq)toast(e.message,'err');}
+}
+
+/* ---------- Rückgewinn-Leiste ---------- */
+function renderReclaim(){
+  const net=overall.bytes_before-overall.bytes_after,loss=net<0,empty=!overall.count;
+  $('rcBig').textContent=net===0?'0 B':(loss?'+':'')+fmtBytes(Math.abs(net));
+  $('rcBig').className='big'+(loss?' loss':'');
+  $('rcWord').textContent=loss?'zusätzlich belegt':'zurückgewonnen';
+  $('tiles').style.display=empty?'none':'grid';
+  $('rcEmpty').style.display=empty?'block':'none';
+  $('rcNote').textContent=loss?'Die konvertierten Dateien sind zusammen größer als die Originale – für dieses Material bringt das gewählte Format keine Ersparnis.':'';
+  $('rcNote').style.display=loss&&!empty?'block':'none';
+  if(empty){$('rcMeta').textContent='0 Dateien · 0 Läufe';return;}
+  const last=overall.last_run||(runsAll.length?runsAll[0].timestamp:null);
+  $('rcMeta').textContent=plural(overall.count,'Datei','Dateien')+' · '+plural(laufZahl(),'Lauf','Läufe')+(last?' · zuletzt '+fmtDate(last):'');
+}
+
+
+/* ---------- Kacheln ---------- */
+function renderTiles(){
+  const saved=overall.bytes_before-overall.bytes_after,grew=saved<0;
+  $('tFiles').textContent=nf0.format(overall.count);
+  $('tFilesSub').textContent=runsAll.length?'in '+plural(laufZahl(),'Lauf','Läufen'):'noch kein Lauf';
+  // Zuwachs bekommt eigene Beschriftung und Rot – sonst stünde "+728 KB" unter "Gespart".
+  $('tSavedLbl').textContent=grew?'Zusätzlich belegt':'Gespart';
+  $('tSaved').textContent=(grew?'+':'')+fmtBytes(Math.abs(saved));
+  $('tSaved').className='v '+(grew?'red':'mint');
+  $('tSavedSub').textContent=overall.count?fmtBytes(overall.bytes_before)+' → '+fmtBytes(overall.bytes_after):'–';
+  $('tPctLbl').textContent=grew?'Zuwachs':'Reduktion';
+  $('tPct').textContent=overall.count?pctTxt(overall.bytes_before,overall.bytes_after):'±0 %';
+  $('tPct').className='v '+(grew?'red':'');
+  $('tPctSub').textContent=overall.count?'der ursprünglichen Größe':'–';
+}
+
+/* ---------- Diagramm (komplett per DOM-API, keine HTML-Strings) ---------- */
+const MAX_BARS=40;
+let chartBars=[];
+function renderChart(){
+  const svg=$('chartSvg'),card=$('chartCard');
+  if(!runsAll.length){card.style.display='none';svg.replaceChildren();chartBars=[];$('chartKey').style.display='none';return;}
+  card.style.display='';
+  const vis=runsAll.slice(0,MAX_BARS).slice().reverse();  // alt → neu (neu rechts)
+  const older=runsAll.slice(MAX_BARS);
+  const bars=[];
+  if(older.length){
+    const agg=sumRuns(older);
+    bars.push({old:true,label:'ältere ('+older.length+')',n:older.length,count:agg.count,
+               bytes_before:agg.bytes_before,bytes_after:agg.bytes_after,
+               first:older[older.length-1].timestamp,last:older[0].timestamp});
+  }
+  // Der Sammeleintrag bekommt dieselbe Sonderrolle wie die "ältere (N)"-Säule:
+  // beschriftet als Bestand, nicht klickbar – er hat keine Dateieinträge zum Filtern.
+  vis.forEach(r=>bars.push(r.run_id===GAP_RUN
+    ?{old:true,gap:true,label:runLabel(r),n:r.runs||1,count:num(r.count),
+      bytes_before:num(r.bytes_before),bytes_after:num(r.bytes_after)}
+    :{run:r,label:runLabel(r),count:num(r.count),bytes_before:num(r.bytes_before),bytes_after:num(r.bytes_after)}));
+  chartBars=bars;
+  $('chartSub').textContent=runsAll.length>MAX_BARS?'letzte '+MAX_BARS+' von '+laufZahl()+' Läufen':plural(laufZahl(),'Lauf','Läufe');
+  const W=Math.max(300,$('chart').clientWidth||600),H=200,padL=60,padR=8,padT=14,padB=26;
+  const iw=W-padL-padR,ih=H-padT-padB,n=bars.length;
+  const val=b=>num(b.bytes_before)-num(b.bytes_after);
+  const reg=bars.filter(b=>!b.old);
+  const maxPos=Math.max(0,...reg.map(b=>Math.max(0,val(b))));
+  const maxNeg=Math.max(0,...reg.map(b=>Math.max(0,-val(b))));
+  /* Nulllinie: ohne Zuwachs-Lauf bleibt sie ganz unten – der Normalfall sieht aus wie bisher
+     und verschenkt keine Fläche. Sonst teilt sie die Höhe im ECHTEN Verhältnis der beiden
+     Extreme, damit oben und unten derselbe Maßstab gilt; nur ein 16px-Streifen bleibt
+     mindestens frei, damit Achsenbeschriftung und winzige Balken noch Platz haben. */
+  const minStrip=22/ih;
+  const negFrac=maxNeg<=0?0:(maxPos<=0?1:Math.min(1-minStrip,Math.max(minStrip,maxNeg/(maxPos+maxNeg))));
+  const hDn=ih*negFrac,hUp=ih-hDn,y0=padT+hUp;
+  const step=iw/n,bw=Math.max(3,Math.min(48,step*0.66));
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.setAttribute('aria-label',maxNeg>0?'Balkendiagramm je Lauf: Ersparnis über der Nulllinie, Zuwachs darunter':'Balkendiagramm: Ersparnis je Lauf');
+  $('chartKey').style.display=maxNeg>0?'flex':'none';
+  const frag=document.createDocumentFragment();
+  const gridLine=(y,cls)=>frag.appendChild(svgEl('line',{class:cls,x1:padL,x2:W-padR,y1:y.toFixed(1),y2:y.toFixed(1)}));
+  const gridTxt=(y,t)=>{const tx=svgEl('text',{class:'axis',x:padL-6,y:(y+3.5).toFixed(1),'text-anchor':'end'});tx.textContent=t;frag.appendChild(tx);};
+  const ticks=hUp>=110?4:hUp>=60?2:hUp>=22?1:0;
+  for(let i=1;i<=ticks;i++){const v=maxPos*i/ticks,y=y0-hUp*i/ticks;gridLine(y,'grid');gridTxt(y,fmtBytes(v).replace(' ',' '));}
+  gridLine(y0,maxNeg>0?'zero':'grid');gridTxt(y0,'0 B');
+  if(hDn>=22){const y=y0+hDn;gridLine(y,'grid');gridTxt(y,'+'+fmtBytes(maxNeg).replace(' ',' '));}
+  /* Zeitachse: liegen mehrere Läufe auf demselben Tag, unterscheidet die Uhrzeit sie –
+     sonst stünde bei jedem Balken dasselbe Datum. Sekunden nur, wenn die Minute nicht reicht. */
+  const dayOf=ts=>fmtDate(ts).slice(0,6).replace(/\.$/,'');
+  const perDay={};reg.forEach(b=>{const d=dayOf(b.run.timestamp);perDay[d]=(perDay[d]||0)+1;});
+  let needSec=false;const seen={};
+  reg.forEach(b=>{const d=dayOf(b.run.timestamp);if(perDay[d]<2)return;
+    const k=d+' '+fmtTime(b.run.timestamp);if(seen[k])needSec=true;seen[k]=1;});
+  const secFmt=ts=>new Date(ts*1000).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const axisLabel=b=>{const ts=b.run.timestamp,d=dayOf(ts);
+    return perDay[d]<2?d:(needSec?secFmt(ts):fmtTime(ts));};
+  const lblEvery=Math.max(1,Math.ceil((needSec?64:56)/step));
+  const skipAfterOld=bars[0]&&bars[0].old?Math.ceil(70/step):0;   // Abstand zum Sammelbalken-Label
+  bars.forEach((b,i)=>{
+    const v=val(b),up=v>=0,mag=Math.abs(v),lim=up?maxPos:maxNeg,room=up?hUp:hDn;
+    const clipped=b.old&&mag>lim&&lim>0;
+    let h=lim>0?room*Math.min(mag,lim)/lim:0;
+    if(mag>0)h=Math.max(3,h);        // jeder Lauf mit Wirkung bekommt eine sichtbare Kante
+    h=Math.min(h,room);
+    const x=padL+step*i+(step-bw)/2,y=up?y0-h:y0;
+    const on=!!(b.run&&filters.run===b.run.run_id);
+    const dim=!!filters.run&&!on&&!b.old;
+    const eff=up?fmtBytes(mag)+' gespart':fmtBytes(mag)+' zusätzlich belegt';
+    const aria=b.old?b.label+(b.gap?', Zeitraum unbekannt':'')+', gesamt '+eff
+                    :b.label+', '+tLabel(b.run.target)+', '+plural(b.count,'Datei','Dateien')+', '+eff;
+    const hit=svgEl('rect',{class:'hit','data-i':i,x:(padL+step*i).toFixed(1),y:padT,width:step.toFixed(1),height:ih});
+    const bar=svgEl('rect',{class:'bar'+(b.old?' old':up?'':' neg')+(on?' on':'')+(dim?' dimmed':''),'data-i':i,
+      x:x.toFixed(1),y:y.toFixed(1),width:bw.toFixed(1),height:h.toFixed(1),rx:2,tabindex:0,role:'button','aria-label':aria});
+    const ttl=document.createElementNS(NS,'title');ttl.textContent=aria;bar.appendChild(ttl);
+    b.el=bar;b.up=up;
+    [hit,bar].forEach(r=>{
+      r.addEventListener('mouseenter',()=>showTip(i));
+      r.addEventListener('mouseleave',hideTip);
+      r.addEventListener('focus',()=>showTip(i));
+      r.addEventListener('blur',hideTip);
+      r.addEventListener('click',()=>barClick(i));
+      r.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();barClick(i);}});
+    });
+    frag.appendChild(hit);frag.appendChild(bar);
+    if(clipped){const cy=up?padT+4:padT+ih-4,d=up?4:-4;
+      frag.appendChild(svgEl('line',{x1:(x-2).toFixed(1),x2:(x+bw+2).toFixed(1),y1:(cy+d).toFixed(1),y2:(cy-d).toFixed(1),stroke:'var(--surface)','stroke-width':3}));}
+    let showLbl;
+    if(b.old)showLbl=true;
+    else if(skipAfterOld&&i<=skipAfterOld)showLbl=false;
+    else showLbl=(n-1-i)%lblEvery===0;
+    if(showLbl){
+      const t=b.old?b.label:axisLabel(b);
+      const tx=svgEl('text',{class:'axis',x:b.old?x.toFixed(1):(x+bw/2).toFixed(1),y:H-8,'text-anchor':b.old?'start':'middle'});
+      tx.textContent=t;frag.appendChild(tx);
+    }
+  });
+  svg.replaceChildren(frag);
+}
+function barClick(i){
+  const b=chartBars[i];if(!b||b.old)return;
+  setRun(filters.run===b.run.run_id?'':b.run.run_id);
+}
+function showTip(i){
+  const b=chartBars[i];if(!b||!b.el)return;
+  const tip=$('tip'),v=b.bytes_before-b.bytes_after,grew=v<0;
+  const eff=`<span class="${grew?'red':'mint'}">${esc((grew?'+':'')+fmtBytes(Math.abs(v)))} ${grew?'zusätzlich belegt':'gespart'}</span>`;
+  tip.innerHTML=b.old
+    ?`<b>${esc(b.label)}</b>${b.gap?'Zeitraum unbekannt – aus der Gesamtbilanz ergänzt':esc(fmtDate(b.first))+' – '+esc(fmtDate(b.last))}<br>${esc(plural(b.count,'Datei','Dateien'))}<br><span class="mono">${esc(fmtBytes(b.bytes_before))} → ${esc(fmtBytes(b.bytes_after))} · ${eff}</span>`
+    :`<b>${esc(b.label)}</b>${esc(tLabel(b.run.target))} · ${esc(plural(b.count,'Datei','Dateien'))}<br><span class="mono">${esc(fmtBytes(b.bytes_before))} → ${esc(fmtBytes(b.bytes_after))} · ${eff}</span>`;
+  const cb=$('chart').getBoundingClientRect(),rb=b.el.getBoundingClientRect();
+  tip.classList.add('on');
+  const tw=tip.offsetWidth;
+  let x=rb.left-cb.left+rb.width/2;
+  x=Math.max(tw/2+2,Math.min(cb.width-tw/2-2,x));
+  tip.style.left=x+'px';tip.style.top=(rb.top-cb.top)+'px';
+}
+function hideTip(){$('tip').classList.remove('on');}
+window.addEventListener('resize',debounce(()=>{if(runsAll.length)renderChart();},150));
+
+/* ---------- Filter ---------- */
+$('q').addEventListener('input',debounce(()=>{filters.q=$('q').value.trim();page=1;load();},250));
+function setFilter(){filters.method=$('methodSel').value;page=1;load();}
+function setRun(id){filters.run=id||'';page=1;load();}
+function resetFilters(){filters={q:'',method:'',run:''};$('q').value='';$('methodSel').value='';page=1;load();}
+function renderChip(){
+  const c=$('runChip');
+  if(!filters.run){c.style.display='none';return;}
+  const r=runById[filters.run];
+  $('runChipTxt').textContent=r?runLabel(r)+' · '+tLabel(r.target):filters.run;
+  c.style.display='inline-flex';
+}
+
+/* ---------- Liste (komplett per DOM-API) ---------- */
+/* Zähler und Löschknopf richten sich nach der Dateiliste, nicht nach der Bilanz –
+   sonst stand „87 Dateien im Verlauf" über einer geleerten Liste. */
+function renderList(entries,hits,listTotal){
+  const list=$('list'),has=listTotal>0,filtered=filtersActive();
+  $('listSub').textContent=!has?''
+    :filtered?hits+' Treffer von '+plural(listTotal,'Datei','Dateien')
+             :plural(listTotal,'Datei','Dateien')+' im Verlauf';
+  $('clearBtn').disabled=!has;
+  if(!entries.length){list.replaceChildren(filtered?emptyFiltered():(overall.count>0?emptyCleared():emptyFirst()));return;}
+  const frag=document.createDocumentFragment();
+  let cur=null;
+  entries.forEach(f=>{
+    const rid=f.run_id||'';
+    if(rid!==cur){cur=rid;frag.appendChild(groupHead(rid,f));}
+    frag.appendChild(fileRow(f));
+  });
+  list.replaceChildren(frag);
+}
+function emptyFiltered(){
+  const d=el('div','empty');
+  d.append('Keine Treffer für diese Filter.',el('br'),'Suche, Methode oder Lauf anpassen.',el('br'));
+  const b=el('button','btn');b.type='button';b.addEventListener('click',resetFilters);
+  b.append(icon('#i-x'),el('span',null,'Filter zurücksetzen'));
+  d.appendChild(b);
+  return d;
+}
+/* Die Bilanz oben lebt im Lauf-Speicher weiter, die Dateiliste ist geleert --
+   ohne Erklärung sähe das nach einem Fehler aus. */
+function emptyCleared(){
+  const d=el('div','empty');
+  d.setAttribute('id','listEmpty');
+  d.append('Die Dateiliste ist geleert.',el('br'),
+           'Die Bilanz oben bleibt erhalten – neue Läufe erscheinen hier wieder.',el('br'));
+  const a=el('a','btn');a.href='/';a.append(icon('#i-play'),el('span',null,'Zum Konverter'));
+  d.appendChild(a);
+  return d;
+}
+function emptyFirst(){
+  const d=el('div','empty');
+  d.append('Noch keine konvertierten Dateien.',el('br'),'Starte im Konverter einen Auftrag.',el('br'));
+  const a=el('a','btn');a.href='/';a.append(icon('#i-play'),el('span',null,'Zum Konverter'));
+  d.appendChild(a);
+  return d;
+}
+function groupHead(rid,f){
+  const r=runById[rid]||{run_id:rid,timestamp:f.timestamp,target:f.target,count:null,bytes_before:0,bytes_after:0};
+  const g=el('div','grp');
+  g.appendChild(el('b',null,runLabel(r)));
+  const dot=()=>g.appendChild(el('span',null,'·'));
+  if(r.target){dot();g.appendChild(el('span','mono',tLabel(r.target)));}
+  if(r.count!=null){
+    dot();g.appendChild(el('span',null,plural(r.count,'Datei','Dateien')));
+    const saved=num(r.bytes_before)-num(r.bytes_after);
+    dot();g.appendChild(el('span','mono '+(saved<0?'l':'m'),(saved>=0?'−':'+')+fmtBytes(Math.abs(saved))));
+  }
+  if(f.quality&&QUAL_LABEL[f.quality]){dot();g.appendChild(el('span',null,QUAL_LABEL[f.quality]));}
+  const db=el('button','btn btn-danger del');db.type='button';
+  db.title='Alle Dateien dieses Laufs aus der Liste nehmen';db.setAttribute('aria-label','Lauf aus der Liste nehmen');
+  db.append(icon('#i-trash'),el('span',null,'Lauf leeren'));
+  db.addEventListener('click',()=>delRun(rid));
+  g.appendChild(db);
+  return g;
+}
+function fileRow(f){
+  const b=num(f.size_before),a=num(f.size_after),bad=b-a<0;
+  const w=b>0?Math.max(1.5,Math.min(100,a/b*100)):0;
+  const row=el('div','row');
+  row.title=[f.path||f.name,
+             tLabel(f.target)+(f.target!=='tvton'&&f.quality&&QUAL_LABEL[f.quality]?' · '+QUAL_LABEL[f.quality]:''),
+             f.sync?'Ton '+f.sync:'',
+             f.duration_s?'Dauer '+fmtDur(num(f.duration_s)):'',
+             f.speed?nf1.format(num(f.speed))+'× Echtzeit':''].filter(Boolean).join('\n');
+  const nmw=el('div','nmw');
+  // f.path ist die fertige, konvertierte Datei -- ihr Name (mit neuer Endung)
+  // gehoert in die Zeile. f.name ist der Quellname und bleibt als Tooltip.
+  const neuerName=f.path?String(f.path).split('/').pop():'';
+  nmw.appendChild(el('div','nm',neuerName||(f.name==null?'':String(f.name))));
+  if(neuerName&&f.name&&neuerName!==f.name)nmw.appendChild(el('div','rd','aus '+f.name));
+  // Herkunft: bei Sammelaufträgen stammen Dateien aus verschiedenen Quellordnern,
+  // deshalb steht der Quellordner vor dem Unterordner (src ist bei Altbeständen leer).
+  const herkunft=[f.src,f.rel_dir].filter(Boolean).join(' / ');
+  if(herkunft)nmw.appendChild(el('div','rd',herkunft));
+  const st=el('div','st');
+  const bar=el('div','sbar'),fill=el('i',bad?'bad':null);
+  fill.style.width=w+'%';bar.appendChild(fill);
+  const line=el('div','sline');
+  const sz=el('span','sz');
+  // Ton aus Video: das Video blieb liegen, „vorher → nachher“ wäre eine Schein-Ersparnis
+  if(f.quelle_bleibt)sz.append(fmtBytes(a)+' ',el('em',null,'(Ton herausgelöst, Video bleibt)'));
+  else sz.append(fmtBytes(b)+' → '+fmtBytes(a)+' ',el('em',bad?'bad':null,'('+pctTxt(b,a)+')'));
+  line.appendChild(sz);
+  if(f.method)line.appendChild(el('span','badge'+(/^GPU/.test(String(f.method))?' gpu':''),String(f.method)));
+  line.appendChild(el('span','tm',fmtTime(f.timestamp)));
+  st.append(bar,line);
+  const act=el('div','act');
+  if(f.path){
+    const pb=el('button','btn');pb.type='button';
+    pb.title='Im Browser ansehen bzw. anhören';pb.setAttribute('aria-label','Abspielen');
+    pb.appendChild(icon(isAudioFile(f.path)?'#i-music':'#i-play'));
+    pb.addEventListener('click',()=>openPlayer(f));
+    act.appendChild(pb);
+  }
+  const db=el('button','btn btn-danger');db.type='button';
+  db.title='Diesen Eintrag aus der Liste entfernen';db.setAttribute('aria-label','Eintrag entfernen');
+  db.appendChild(icon('#i-trash'));
+  db.addEventListener('click',()=>delEntry(f));
+  act.appendChild(db);
+  row.append(nmw,st,act);
+  return row;
+}
+const AUD_ENDUNGEN=['.mp3','.flac','.aac','.ogg','.oga','.wav','.wma','.m4a','.opus','.alac','.aiff'];
+function isAudioFile(p){const s=String(p||'').toLowerCase();return AUD_ENDUNGEN.some(e=>s.endsWith(e));}
+
+/* ── Abspielen im Browser ──────────────────────────────────────────────────
+   Gleiche Mechanik wie im FAH Media Downloader: was der Browser kann, geht
+   direkt raus; MKV & Co. werden vorher verlustfrei umgepackt (Bild bleibt
+   unangetastet); geht auch das nicht, sagt es die Oberfläche offen.        */
+let plPoll=null, plPfad='';
+function stopPlPoll(){if(plPoll){clearTimeout(plPoll);plPoll=null;}}
+function closePlayer(){
+  stopPlPoll();
+  $('plBody').replaceChildren();      // stoppt die Wiedergabe
+  $('plOv').classList.remove('on');
+}
+/* Das Overlay steht im HTML NACH diesem Skript. Beim direkten Zugriff hier
+   waere $('plOv') noch null, der Fehler risse das ganze Skript ab -- und der
+   Verlauf bliebe leer, obwohl die Daten da sind. Deshalb erst nach dem Aufbau. */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&$('plOv').classList.contains('on'))closePlayer();
+  });
+  $('plOv').addEventListener('click',e=>{if(e.target===$('plOv'))closePlayer();});
+});
+
+function plMedia(url,audio){
+  const m=document.createElement(audio?'audio':'video');
+  m.controls=true;m.autoplay=true;m.preload='metadata';m.src=url;m.className='pl-media';
+  if(audio)m.setAttribute('data-audio','1');
+  return m;
+}
+function plHinweis(grund,audio){
+  const d=el('div','pl-note');
+  d.appendChild(icon('#i-alert'));
+  d.appendChild(el('p',null,grund||'Diese Datei lässt sich im Browser nicht abspielen.'));
+  d.appendChild(el('p','sub','Lade sie herunter oder öffne sie in VLC / Infuse / einem Mediaplayer.'));
+  return d;
+}
+async function openPlayer(f){
+  stopPlPoll();
+  plPfad=f.path;
+  $('plTitle').textContent=(f.path?String(f.path).split('/').pop():'')||f.name||'';
+  $('plPath').textContent=f.path||'';
+  $('plOv').classList.add('on');
+  const body=$('plBody');
+  body.replaceChildren(el('p','sub','Prüfe, wie sich die Datei abspielen lässt …'));
+  const q='?path='+encodeURIComponent(f.path);
+  $('plDl').onclick=()=>{location.href='/api/play/download'+q;};
+  const audio=isAudioFile(f.path);
+
+  let info;
+  try{info=await api('/play'+q);}
+  catch(e){body.replaceChildren(plHinweis(e.message,audio));return;}
+  if(plPfad!==f.path)return;                    // inzwischen etwas anderes offen
+
+  if(info.modus==='direkt'){
+    body.replaceChildren(plMedia('/api/play/stream'+q,audio));
+    return;
+  }
+  if(info.modus!=='umpacken'){
+    body.replaceChildren(plHinweis(info.grund,audio));
+    return;
+  }
+
+  /* Kann dieser Browser den Codec ueberhaupt? Das weiss er selbst am besten –
+     HEVC etwa spielt Safari seit je, Chrome/Edge seit 107, Firefox seit 137,
+     jeweils nur mit Hardware-Decoder. Statt hier eine Liste zu pflegen, fragen
+     wir canPlayType. Ein leeres Ergebnis heisst "wahrscheinlich nicht" – dann
+     sparen wir uns das Umpacken und sagen es offen, lassen den Versuch aber zu. */
+  if(info.mime){
+    const probe=document.createElement(audio?'audio':'video');
+    if(!probe.canPlayType(info.mime)){
+      const d=el('div','pl-note');
+      d.appendChild(icon('#i-alert'));
+      d.appendChild(el('p',null,'Dieses Video ist in '+codecName(info.mime)
+        +' kodiert – das kann dein Browser nicht darstellen.'));
+      d.appendChild(el('p','sub','Safari kann HEVC, Chrome/Edge ab Version 107 '
+        +'und Firefox ab 137 – jeweils nur mit passender Grafikhardware. '
+        +'Sonst hilft Herunterladen oder ein Mediaplayer wie VLC.'));
+      const b=el('button','btn');b.type='button';
+      b.append(icon('#i-play'),el('span',null,'Trotzdem versuchen'));
+      b.addEventListener('click',()=>starteUmpacken(f,q,audio,info));
+      d.appendChild(b);
+      body.replaceChildren(d);
+      return;
+    }
+  }
+  starteUmpacken(f,q,audio,info);
+}
+
+function codecName(mime){
+  const m=String(mime||'');
+  if(m.includes('hvc1')||m.includes('hev1'))return 'HEVC (H.265)';
+  if(m.includes('avc1'))return 'H.264';
+  if(m.includes('av01'))return 'AV1';
+  if(m.includes('vp9'))return 'VP9';
+  if(m.includes('vp8'))return 'VP8';
+  return 'diesem Format';
+}
+
+async function starteUmpacken(f,q,audio,info){
+  const body=$('plBody');
+
+  const box=el('div','pl-note');
+  box.appendChild(icon('#i-film'));
+  box.appendChild(el('p',null,'Diesen Container kann der Browser nicht direkt abspielen – '
+    +'die Datei wird gerade verlustfrei nach '
+    +String(info.ziel||'.mp4').replace('.','').toUpperCase()
+    +' umgepackt. Bild und Ton bleiben unverändert.'));
+  const bar=el('div','pl-bar'),fill=el('i');bar.appendChild(fill);
+  const txt=el('p','sub','Startet …');
+  box.append(bar,txt);
+  body.replaceChildren(box);
+
+  try{await api('/play',{method:'POST',body:JSON.stringify({path:f.path})});}
+  catch(e){txt.textContent=e.message;return;}
+
+  const frage=async()=>{
+    if(plPfad!==f.path)return;
+    let st;
+    try{st=await api('/play'+q);}catch(e){txt.textContent=e.message;return;}
+    if(st.fehler){body.replaceChildren(plHinweis(st.fehler,audio));return;}
+    const pct=Math.max(0,Math.min(100,st.fortschritt||0));
+    fill.style.width=pct+'%';
+    txt.textContent=st.bereit?'Fertig.':'Wird vorbereitet … '+pct+'%';
+    if(st.bereit){body.replaceChildren(plMedia('/api/play/stream'+q,audio));return;}
+    plPoll=setTimeout(frage,1500);
+  };
+  frage();
+}
+/* Welche Seitenzahlen zeigen: erste, letzte und die Nachbarn der aktuellen Seite,
+   Lücken als „…“ – eine Lücke von genau einer Seite zeigt die Seite selbst. */
+function seitenListe(cur,tot,rand=2){
+  const s=new Set([1,tot]);
+  for(let i=cur-rand;i<=cur+rand;i++)if(i>=1&&i<=tot)s.add(i);
+  const a=[...s].sort((x,y)=>x-y),out=[];
+  a.forEach((n,i)=>{if(i){const d=n-a[i-1];if(d===2)out.push(n-1);else if(d>2)out.push('…');}out.push(n);});
+  return out;
+}
+function springeZuSeite(v){
+  const n=parseInt(v,10);
+  if(!Number.isFinite(n)){$('pgJump').value=String(page);return;}
+  const z=Math.min(pages,Math.max(1,n));
+  if(z===page){$('pgJump').value=String(page);return;}
+  gotoPage(z);
+}
+function renderPager(limit){
+  if(limit==='all'||pages<=1){$('pager').style.display='none';return;}
+  $('pager').style.display='flex';
+  $('pgTot').textContent=String(pages);
+  $('prevBtn').disabled=page<=1;$('nextBtn').disabled=page>=pages;
+  const box=$('pgNums');box.replaceChildren();
+  seitenListe(page,pages).forEach(n=>{
+    if(n==='…'){box.appendChild(el('span','pg-gap','…'));return;}
+    const b=el('button','pg'+(n===page?' on':''),String(n));
+    b.type='button';b.title='Seite '+n;
+    if(n===page){b.setAttribute('aria-current','page');b.disabled=true;}
+    else b.onclick=()=>gotoPage(n);
+    box.appendChild(b);
+  });
+  const j=$('pgJump');j.max=String(pages);j.value=String(page);
+}
+function gotoPage(p){if(p<1||p>pages)return;page=p;load();window.scrollTo({top:$('list').offsetTop-80,behavior:'smooth'});}
+/* Löschen räumt immer nur die Dateiliste. Kacheln, Rückgewinn-Leiste und
+   Diagramm speisen sich aus dem Lauf-Speicher und bleiben unberührt. */
+async function delEntry(f){
+  const nm=f.path?String(f.path).split('/').pop():(f.name||'');
+  if(!confirm('Diesen Eintrag aus der Liste entfernen?\n\n'+nm+'\n\nDie Bilanz oben bleibt unverändert.'))return;
+  try{
+    const d=await api('/history/delete',{method:'POST',
+      body:JSON.stringify({run_id:f.run_id,path:f.path,timestamp:f.timestamp})});
+    await load();
+    toast(d.removed?'Eintrag entfernt':'Eintrag war schon weg',d.removed?'ok':'');
+  }catch(e){toast(e.message,'err');}
+}
+async function delRun(rid){
+  const r=runById[rid];
+  if(!confirm('Alle Dateien dieses Laufs aus der Liste nehmen?\n\n'+(r?runLabel(r):rid)+'\n\nDer Lauf bleibt in der Bilanz und im Diagramm.'))return;
+  try{
+    const d=await api('/history/delete-run',{method:'POST',body:JSON.stringify({run_id:rid})});
+    if(filters.run===rid)filters.run='';
+    page=1;await load();
+    toast(d.removed+' '+(d.removed===1?'Eintrag':'Einträge')+' entfernt','ok');
+  }catch(e){toast(e.message,'err');}
+}
+async function clearHistory(){
+  if(!confirm('Den gesamten Verlauf wirklich löschen?\nDie Gesamtstatistik auf der Konverter-Seite bleibt erhalten.'))return;
+  try{await api('/history/clear',{method:'POST',body:'{}'});filters={q:'',method:'',run:''};$('q').value='';$('methodSel').value='';page=1;await load();toast('Verlauf gelöscht','ok');}
+  catch(e){toast(e.message,'err');}
+}
+load();
+</script>
+<!-- Player-Overlay -->
+<div class="ov" id="plOv" role="dialog" aria-modal="true" aria-labelledby="plTitle">
+  <div class="modal">
+    <h2 id="plTitle"></h2>
+    <p class="sub" id="plPath"></p>
+    <div id="plBody"></div>
+    <div class="pl-actions">
+      <button class="btn" id="plDl" type="button"><svg class="ic"><use href="#i-download"/></svg><span class="txt">Herunterladen</span></button>
+      <button class="btn" id="plClose" type="button" onclick="closePlayer()"><svg class="ic"><use href="#i-x"/></svg><span class="txt">Schließen</span></button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
