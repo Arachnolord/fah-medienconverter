@@ -1,5 +1,15 @@
 # Media Converter
 
+## Screenshots
+
+*Aufgenommen mit Beispieldateien (freie Blender-Filme, „Beispielserie“) – keine echten Medien oder Daten.*
+
+| Auftrag: Ordner und Format wählen | Analyse vor dem Start |
+|---|---|
+| ![Auftrag](docs/screenshots/1-auftrag.png) | ![Analyse](docs/screenshots/2-analyse.png) |
+
+<img src="docs/screenshots/3-handy.png" alt="Handy" width="260">
+
 ## Was es tut
 
 Kleines Web-Werkzeug für das NAS: Es konvertiert deine Videos (H.265, H.264, AV1, VP9, MPEG-4) und
